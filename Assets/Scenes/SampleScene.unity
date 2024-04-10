@@ -422,6 +422,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a31970ee7bfe844689b7a24816b014b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  particleScale: 0.5
+  gravity: -9.8
   circle: {fileID: 1375653001}
   NumParticles: 10
 --- !u!4 &1649244971
