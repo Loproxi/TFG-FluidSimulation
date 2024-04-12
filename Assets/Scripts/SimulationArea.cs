@@ -13,14 +13,6 @@ public struct SPHParticles
     public float pressure;
 }
 
-public struct BoundLimits
-{
-    public float ymin;
-    public float ymax;
-    public float xmin;
-    public float xmax;
-}
-
 public class SimulationArea : MonoBehaviour
 {
 
@@ -30,7 +22,9 @@ public class SimulationArea : MonoBehaviour
     public int NumParticles = 10;
     private GameObject[,] _particles;
     private Vector3[,] _velocities;
+    [Header("Bound Related")]
     [SerializeField] Vector2 limits;
+    public float width,height = 10;
 
     private int NumTotalOfParticles
     {  get { return NumParticles * NumParticles; } }
@@ -73,20 +67,54 @@ public class SimulationArea : MonoBehaviour
 
                 Vector3 particlePos = _particles[i, j].transform.position;
 
-                if (particlePos.y <= limits.y)
+                if(particlePos.x >= limits.x && particlePos.y >= limits.y && particlePos.x <= limits.x + width && particlePos.y <= limits.y + height)
                 {
-                    _velocities[i, j] = new Vector3(0.0f, 0.0f);
-                    _particles[i, j].transform.position.Set(particlePos.x, limits.y, particlePos.z);
+                    // Particle inside limits
+
+                    _velocities[i, j].y += gravity * Time.deltaTime;
+                    _velocities[i, j].x += 2.0f * Time.deltaTime;
+                    _particles[i, j].transform.position += _velocities[i, j] * Time.deltaTime;
                 }
                 else
                 {
+                    // out of limits
 
-                    _velocities[i, j].y += gravity * Time.deltaTime;
-                    _particles[i, j].transform.position += _velocities[i, j] * Time.deltaTime;
+                    _velocities[i, j] = Vector3.zero;
+                    _particles[i, j].transform.position = new Vector3(
+                        Mathf.Clamp(particlePos.x, limits.x, limits.x + width),
+                        Mathf.Clamp(particlePos.y, limits.y, limits.y + height),
+                        particlePos.z
+                    );
 
                 }
                 
             }
         }
+    }
+
+    private void OnDrawGizmos()
+    {      
+
+        for (int i = 0; i < NumParticles; i++)
+        {
+            for (int j = 0; j < NumParticles; j++)
+            {
+
+                Vector3 position = new Vector2(i * particleScale, j * particleScale);
+
+                Gizmos.DrawWireSphere(position, particleScale/2);
+
+            }
+        }
+
+        DrawBoundsQuad();
+    }
+
+    private void DrawBoundsQuad()
+    {
+        Gizmos.DrawLine(new Vector3(limits.x, limits.y), new Vector3(limits.x + width, limits.y));
+        Gizmos.DrawLine(new Vector3(limits.x, limits.y), new Vector3(limits.x, limits.y + height));
+        Gizmos.DrawLine(new Vector3(limits.x + width, limits.y), new Vector3(limits.x + width, limits.y + height));
+        Gizmos.DrawLine(new Vector3(limits.x, limits.y + height), new Vector3(limits.x + width, limits.y + height));
     }
 }
