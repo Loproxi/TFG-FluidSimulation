@@ -74,21 +74,19 @@ public class SimulationArea : MonoBehaviour
                 {
 
                     // Inside Limits
-
                     _velocities[i, j].y += gravity * Time.deltaTime;
                     _velocities[i, j].x += 2.0f * Time.deltaTime;
-
-                    _particles[i, j].transform.position += _velocities[i, j] * Time.deltaTime;
+                    
                 }
                 else
                 {
 
                     //Out of limits
-
                     _velocities[i, j] *= -1 * collisionDamping;
-                    _particles[i, j].transform.position += _velocities[i, j] * Time.deltaTime;
                     
                 }
+
+                _particles[i, j].transform.position += _velocities[i, j] * Time.deltaTime;
             }
         }
     }

@@ -409,7 +409,7 @@ Transform:
   m_GameObject: {fileID: 1495877720}
   m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 5.9774, y: 1.9876, z: 0.26932985}
-  m_LocalScale: {x: 5, y: 1.7324066, z: 2.9577272}
+  m_LocalScale: {x: 9.1875, y: 3.1832972, z: 5.4348235}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
@@ -446,7 +446,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   particleScale: 1.48
   gravity: -9.8
-  collisionDamping: 0.6
+  collisionDamping: 1
   circle: {fileID: 6142295588572793677, guid: eda247f905211b943860d8f75dc9f12f, type: 3}
   NumParticles: 3
   limits: {x: -2, y: -2}
