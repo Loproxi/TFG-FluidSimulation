@@ -15,13 +15,15 @@ public struct SPHParticles
 
 public class SimulationArea : MonoBehaviour
 {
-
+    [Header("Particle Related")]
     public float particleScale = 1.0f;
     public float gravity = -9.8f;
+    public float collisionDamping = 0.6f;
     public GameObject circle;
     public int NumParticles = 10;
     private GameObject[,] _particles;
     private Vector3[,] _velocities;
+
     [Header("Bound Related")]
     [SerializeField] Vector2 limits;
     public float width,height = 10;
@@ -60,6 +62,7 @@ public class SimulationArea : MonoBehaviour
 
     private void ApplyForcesOnParticles()
     {
+        
         for (int i = 0; i < NumParticles; ++i)
         {
             for (int j = 0; j < NumParticles; ++j)
@@ -67,29 +70,44 @@ public class SimulationArea : MonoBehaviour
 
                 Vector3 particlePos = _particles[i, j].transform.position;
 
-                if(particlePos.x >= limits.x && particlePos.y >= limits.y && particlePos.x <= limits.x + width && particlePos.y <= limits.y + height)
+                if(IsParticleInsideBounds(particlePos))
                 {
-                    // Particle inside limits
+
+                    // Inside Limits
 
                     _velocities[i, j].y += gravity * Time.deltaTime;
                     _velocities[i, j].x += 2.0f * Time.deltaTime;
+
                     _particles[i, j].transform.position += _velocities[i, j] * Time.deltaTime;
                 }
                 else
                 {
-                    // out of limits
 
-                    _velocities[i, j] = Vector3.zero;
-                    _particles[i, j].transform.position = new Vector3(
-                        Mathf.Clamp(particlePos.x, limits.x, limits.x + width),
-                        Mathf.Clamp(particlePos.y, limits.y, limits.y + height),
-                        particlePos.z
-                    );
+                    //Out of limits
 
+                    _velocities[i, j] *= -1 * collisionDamping;
+                    _particles[i, j].transform.position += _velocities[i, j] * Time.deltaTime;
+                    
                 }
-                
             }
         }
+    }
+
+    private bool IsParticleInsideBounds(Vector3 particlePos)
+    {
+
+        float particleRadius = particleScale / 2;
+
+        //Taking into account the particle radius in limits
+        float minX = limits.x + particleRadius;
+        float maxX = limits.x + width - particleRadius;
+        float minY = limits.y + particleRadius;
+        float maxY = limits.y + height - particleRadius;
+
+        bool insideBounds = particlePos.x >= minX && particlePos.y >= minY && particlePos.x <= maxX && particlePos.y <= maxY;
+
+        return insideBounds;
+
     }
 
     private void OnDrawGizmos()
@@ -112,9 +130,13 @@ public class SimulationArea : MonoBehaviour
 
     private void DrawBoundsQuad()
     {
+        //Bottom
         Gizmos.DrawLine(new Vector3(limits.x, limits.y), new Vector3(limits.x + width, limits.y));
+        //Left
         Gizmos.DrawLine(new Vector3(limits.x, limits.y), new Vector3(limits.x, limits.y + height));
+        //Right
         Gizmos.DrawLine(new Vector3(limits.x + width, limits.y), new Vector3(limits.x + width, limits.y + height));
+        //Up
         Gizmos.DrawLine(new Vector3(limits.x, limits.y + height), new Vector3(limits.x + width, limits.y + height));
     }
 }
