@@ -17,7 +17,7 @@ public class SimulationArea : MonoBehaviour
 {
     [Header("Particle Related")]
     public float particleScale = 1.0f;
-    public float gravity = -9.8f;
+    public float gravity = 9.8f;
     public float collisionDamping = 0.6f;
     public GameObject circle;
     public int NumParticles = 10;
@@ -53,6 +53,8 @@ public class SimulationArea : MonoBehaviour
 
                 _particles[i, j] = Instantiate(circle);
                 _particles[i, j].transform.localScale = new Vector3(particleScale, particleScale, particleScale);
+
+
                 Vector3 position = new Vector2(i * particleScale, j * particleScale);
                 _particles[i, j].transform.position = position;
 
@@ -70,12 +72,13 @@ public class SimulationArea : MonoBehaviour
 
                 Vector3 particlePos = _particles[i, j].transform.position;
 
-                if(IsParticleInsideBounds(particlePos))
+                float particleRadius = particleScale / 2;
+
+                if (IsParticleInsideBounds(particlePos, particleRadius))
                 {
 
                     // Inside Limits
-                    _velocities[i, j].y += gravity * Time.deltaTime;
-                    _velocities[i, j].x += 2.0f * Time.deltaTime;
+                    _velocities[i, j] += Vector3.down * gravity * Time.deltaTime;
                     
                 }
                 else
@@ -83,7 +86,13 @@ public class SimulationArea : MonoBehaviour
 
                     //Out of limits
                     _velocities[i, j] *= -1 * collisionDamping;
-                    
+
+                    //Assure that our particles are set back to the limits
+                    Vector3 clampedPos = particlePos;
+                    clampedPos.x = Mathf.Clamp(clampedPos.x, limits.x + particleRadius, limits.x + width - particleRadius);
+                    clampedPos.y = Mathf.Clamp(clampedPos.y, limits.y + particleRadius, limits.y + height - particleRadius);
+                    _particles[i, j].transform.position = clampedPos;
+
                 }
 
                 _particles[i, j].transform.position += _velocities[i, j] * Time.deltaTime;
@@ -91,10 +100,8 @@ public class SimulationArea : MonoBehaviour
         }
     }
 
-    private bool IsParticleInsideBounds(Vector3 particlePos)
+    private bool IsParticleInsideBounds(Vector3 particlePos,float particleRadius)
     {
-
-        float particleRadius = particleScale / 2;
 
         //Taking into account the particle radius in limits
         float minX = limits.x + particleRadius;
