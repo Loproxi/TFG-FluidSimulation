@@ -55,11 +55,27 @@ public class SimulationArea : MonoBehaviour
                 _particles[i, j].transform.localScale = new Vector3(particleScale, particleScale, particleScale);
 
 
-                Vector3 position = new Vector2(i * particleScale, j * particleScale);
+                Vector3 position = RandomPosInBounds(particleScale/2);
                 _particles[i, j].transform.position = position;
 
             }
         }
+    }
+
+    private Vector3 RandomPosInBounds(float particleRadius)
+    {
+
+        //Taking into account the particle radius in limits
+        float minX = limits.x + particleRadius;
+        float maxX = limits.x + width - particleRadius;
+        float minY = limits.y + particleRadius;
+        float maxY = limits.y + height - particleRadius;
+
+        float x = Random.Range(minX, maxX);
+        float y = Random.Range(minY, maxY);
+
+        return new Vector3(x, y);
+
     }
 
     private void ApplyForcesOnParticles()
@@ -79,6 +95,7 @@ public class SimulationArea : MonoBehaviour
 
                     // Inside Limits
                     _velocities[i, j] += Vector3.down * gravity * Time.deltaTime;
+
                     
                 }
                 else
@@ -115,22 +132,34 @@ public class SimulationArea : MonoBehaviour
 
     }
 
-    private void OnDrawGizmos()
-    {      
+    void ComputeDensity()
+    {
+        // TODO: Compute only the with the ones inside of the circle
+    }
 
+    private void OnDrawGizmos()
+    {
+
+        DrawParticles();
+
+        DrawBoundsQuad();
+    }
+
+    private void DrawParticles()
+    {
         for (int i = 0; i < NumParticles; i++)
         {
             for (int j = 0; j < NumParticles; j++)
             {
 
+                //TODO: Find a way to save the random positions that the particles will spawn without doing inside draw particles
+
                 Vector3 position = new Vector2(i * particleScale, j * particleScale);
 
-                Gizmos.DrawWireSphere(position, particleScale/2);
+                Gizmos.DrawWireSphere(position, particleScale / 2);
 
             }
         }
-
-        DrawBoundsQuad();
     }
 
     private void DrawBoundsQuad()

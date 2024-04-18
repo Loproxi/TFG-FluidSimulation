@@ -302,7 +302,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 6.82, y: 1.85, z: -10}
+  m_LocalPosition: {x: 6.82, y: 1.85, z: -58.4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -448,8 +448,8 @@ MonoBehaviour:
   gravity: 9.8
   collisionDamping: 0.7
   circle: {fileID: 6142295588572793677, guid: eda247f905211b943860d8f75dc9f12f, type: 3}
-  NumParticles: 14
-  limits: {x: -23.2, y: -20.4}
+  NumParticles: 16
+  limits: {x: -22, y: -20.4}
   width: 60
   height: 38.4
 --- !u!4 &1649244971
