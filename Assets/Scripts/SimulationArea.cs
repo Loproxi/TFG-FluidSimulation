@@ -24,6 +24,9 @@ public class SimulationArea : MonoBehaviour
     private GameObject[,] _particles;
     private Vector3[,] _velocities;
 
+    [Header("SPH Related")]
+    private float smoothDensityRadius = 2.0f;
+
     [Header("Bound Related")]
     [SerializeField] Vector2 limits;
     public float width,height = 10;
@@ -96,6 +99,7 @@ public class SimulationArea : MonoBehaviour
                     // Inside Limits
                     _velocities[i, j] += Vector3.down * gravity * Time.deltaTime;
 
+                    ComputeDensity(particlePos);
                     
                 }
                 else
@@ -132,9 +136,33 @@ public class SimulationArea : MonoBehaviour
 
     }
 
-    void ComputeDensity()
+    float ComputeDensity(Vector3 posToCompute)
     {
-        // TODO: Compute only the with the ones inside of the circle
+
+        // TODO: Compute only the with the ones inside of the circle (grid partitioning)
+
+        //Iterate all the particles summing all the masses multiplied by the smoothing Kernel
+
+        float density = 0.0f;
+        float mass = 1.0f;
+
+        foreach (var particle in _particles)
+        {
+            
+            float dist = (posToCompute - particle.transform.position).magnitude;
+            if (dist < smoothDensityRadius)
+            {
+                float influence = Tools.Ver_2_SmoothDensityKernel(smoothDensityRadius, dist);
+                density += mass * influence;
+            }
+            else
+            {
+                continue;
+            }
+
+        }
+
+        return density;
     }
 
     private void OnDrawGizmos()

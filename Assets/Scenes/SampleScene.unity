@@ -408,8 +408,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1495877720}
   m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 21.8053, y: 9.807, z: 0.26932985}
-  m_LocalScale: {x: 15.859924, y: 3.1832972, z: 6.9986606}
+  m_LocalPosition: {x: 9.2241, y: -0.301, z: 0.26932985}
+  m_LocalScale: {x: 18.376894, y: 3.1832972, z: 13.579254}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
@@ -445,7 +445,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   particleScale: 1
-  gravity: 9.8
+  gravity: 0
   collisionDamping: 0.7
   circle: {fileID: 6142295588572793677, guid: eda247f905211b943860d8f75dc9f12f, type: 3}
   NumParticles: 16
