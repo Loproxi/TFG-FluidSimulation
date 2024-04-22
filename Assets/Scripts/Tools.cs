@@ -18,15 +18,16 @@ public class Tools
         return smoothvalue * smoothvalue * smoothvalue / volume;
     }
 
-    public static float Ver_2_SmoothDerivativeKernel(float radius, float dist)
+    //This function returns the slope of the smooth density Kernel V2 
+    public static float Derivative_Ver_2_SmoothDensityKernel(float radius, float dist)
     {
-        float volume = Mathf.PI * Mathf.Pow(radius, 8) / 4;
-        float smoothvalue = Mathf.Max(0, radius - dist);
+        if (dist >= radius)
+            return 0;
 
-        // Derivada de smoothvalue con respecto a dist
-        float derivative_smoothvalue = -3 * smoothvalue * smoothvalue / volume;
+        float f = radius - dist;
+        float scale = -20 / (Mathf.PI * Mathf.Pow(radius, 8));
 
-        return smoothvalue * smoothvalue * smoothvalue / volume;
+        return scale * dist * f * f;
     }
 
     public static float Ver_3_SmoothDensityKernel(float radius, float dist)

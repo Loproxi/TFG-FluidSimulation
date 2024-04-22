@@ -165,6 +165,30 @@ public class SimulationArea : MonoBehaviour
         return density;
     }
 
+    Vector3 ComputePressure(Vector3 posToCompute)
+    {
+        // TODO: Compute only the with the ones inside of the circle (grid partitioning)
+
+        //Iterate all the particles summing all the masses multiplied by the smoothing Kernel
+
+        Vector3 pressure = Vector3.zero;
+        float particlePressure = 1.0f;
+        float particleMass = 1.0f;
+
+        foreach (var particle in _particles)
+        {
+
+            float dist = (posToCompute - particle.transform.position).magnitude;
+            Vector3 dir = (posToCompute - particle.transform.position) / dist;
+            float slope = Tools.Derivative_Ver_2_SmoothDensityKernel(smoothDensityRadius, dist);
+            float density = ComputeDensity(particle.transform.position);
+
+            pressure += particlePressure * dir * slope * particleMass / density;
+        }
+
+        return pressure;
+    }
+
     private void OnDrawGizmos()
     {
 
