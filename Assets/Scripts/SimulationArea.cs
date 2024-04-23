@@ -2,37 +2,39 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.UIElements;
-
-public struct SPHParticles
-{
-    public Sprite mesh;
-    public Vector3 position;
-    public Vector3 velocity;
-    public float density;
-    public float pressure;
-}
 
 public class SimulationArea : MonoBehaviour
 {
     [Header("Particle Related")]
-    public float particleScale = 1.0f;
     public float gravity = 9.8f;
     public float collisionDamping = 0.6f;
-    public GameObject circle;
-    public int NumParticles = 10;
-    private GameObject[,] _particles;
-    private Vector3[,] _velocities;
+    public Sprite circle;
+    public Color pcolor = Color.blue;
+
+    private GameObject[] _particles;
+    private Vector3[] _directions;
 
     [Header("SPH Related")]
-    private float smoothDensityRadius = 2.0f;
+    private float smoothDensityRadius = 15.0f;
+    public struct SPH_Particles
+    {
+        public Vector2 position;
+        public Vector2 velocity;
+        public float density;
+        public float mass;
+        public Sprite sprite;
+        public Vector2 direction;
+    }
+    private SPH_Particles[] _sphparticles;
 
     [Header("Bound Related")]
-    [SerializeField] Vector2 limits;
-    public float width,height = 10;
+    [SerializeField] GameObject particleBoundObject;
+    private ParticleBoundArea particleBoundArea;
+
+    int counter = 0;
 
     private int NumTotalOfParticles
-    {  get { return NumParticles * NumParticles; } }
+    {  get { return particleBoundArea.NumParticles * particleBoundArea.NumParticles; } }
 
     void Start()
     {
@@ -46,95 +48,75 @@ public class SimulationArea : MonoBehaviour
 
     private void GenerateParticles()
     {
-        _particles = new GameObject[NumParticles, NumParticles];
-        _velocities = new Vector3[NumParticles, NumParticles];
+        particleBoundArea = particleBoundObject.GetComponent<ParticleBoundArea>();
+        _particles = new GameObject[NumTotalOfParticles];
+        _sphparticles = new SPH_Particles[NumTotalOfParticles];
+        _directions = new Vector3[NumTotalOfParticles];
 
-        for (int i = 0; i < NumParticles; ++i)
+        particleBoundArea.SpawnParticles();
+
+        for (int i = 0; i < NumTotalOfParticles; i++)
         {
-            for (int j = 0; j < NumParticles; ++j)
-            {
-
-                _particles[i, j] = Instantiate(circle);
-                _particles[i, j].transform.localScale = new Vector3(particleScale, particleScale, particleScale);
-
-
-                Vector3 position = RandomPosInBounds(particleScale/2);
-                _particles[i, j].transform.position = position;
-
-            }
+            _particles[i] = new GameObject();
+            _particles[i].transform.position = particleBoundArea._position[i];
+            _particles[i].transform.localScale = new Vector3(particleBoundArea.particleScale, particleBoundArea.particleScale, particleBoundArea.particleScale);
+            _particles[i].AddComponent<SpriteRenderer>().sprite = circle;
+            _particles[i].GetComponent<SpriteRenderer>().color = pcolor;
+            _sphparticles[i].position = particleBoundArea._position[i];
+            _sphparticles[i].velocity = particleBoundArea._velocity[i];
+            _sphparticles[i].sprite = circle;
+            _sphparticles[i].mass = 1.0f;
+            _sphparticles[i].density = 0.0f;
         }
-    }
-
-    private Vector3 RandomPosInBounds(float particleRadius)
-    {
-
-        //Taking into account the particle radius in limits
-        float minX = limits.x + particleRadius;
-        float maxX = limits.x + width - particleRadius;
-        float minY = limits.y + particleRadius;
-        float maxY = limits.y + height - particleRadius;
-
-        float x = Random.Range(minX, maxX);
-        float y = Random.Range(minY, maxY);
-
-        return new Vector3(x, y);
-
     }
 
     private void ApplyForcesOnParticles()
     {
         
-        for (int i = 0; i < NumParticles; ++i)
+        for (int i = 0; i < particleBoundArea.NumParticles; i++)
         {
-            for (int j = 0; j < NumParticles; ++j)
+
+            Vector3 particlePos = _particles[i].transform.position;
+
+            float particleRadius = particleBoundArea.particleScale / 2;
+
+            if (particleBoundArea.IsParticleInsideBounds(particlePos, particleRadius))
             {
 
-                Vector3 particlePos = _particles[i, j].transform.position;
+                // Inside Limits
+                _sphparticles[i].velocity += Vector2.down * gravity * Time.deltaTime;
 
-                float particleRadius = particleScale / 2;
+                ComputePressure(particlePos);
 
-                if (IsParticleInsideBounds(particlePos, particleRadius))
+                // Increment the counter
+                counter++;
+
+                // Reset the counter if it exceeds the maximum number of particles
+                if (counter >= particleBoundArea.NumParticles * particleBoundArea.NumParticles)
                 {
-
-                    // Inside Limits
-                    _velocities[i, j] += Vector3.down * gravity * Time.deltaTime;
-
-                    ComputeDensity(particlePos);
-                    
+                    counter = 0;
                 }
-                else
-                {
-
-                    //Out of limits
-                    _velocities[i, j] *= -1 * collisionDamping;
-
-                    //Assure that our particles are set back to the limits
-                    Vector3 clampedPos = particlePos;
-                    clampedPos.x = Mathf.Clamp(clampedPos.x, limits.x + particleRadius, limits.x + width - particleRadius);
-                    clampedPos.y = Mathf.Clamp(clampedPos.y, limits.y + particleRadius, limits.y + height - particleRadius);
-                    _particles[i, j].transform.position = clampedPos;
-
-                }
-
-                _particles[i, j].transform.position += _velocities[i, j] * Time.deltaTime;
             }
+            else
+            {
+
+                //Out of limits
+                _sphparticles[i].velocity *= -1 * collisionDamping;
+
+                //Assure that our particles are set back to the limits
+                Vector3 clampedPos = particlePos;
+                clampedPos.x = Mathf.Clamp(clampedPos.x, particleBoundArea.boundInit.x + particleRadius, particleBoundArea.boundInit.x + particleBoundArea.width - particleRadius);
+                clampedPos.y = Mathf.Clamp(clampedPos.y, particleBoundArea.boundInit.y + particleRadius, particleBoundArea.boundInit.y + particleBoundArea.height - particleRadius);
+                _particles[i].transform.position = clampedPos;
+
+            }
+
+            _particles[i].transform.position += new Vector3(_sphparticles[i].velocity.x * Time.deltaTime, _sphparticles[i].velocity.y * Time.deltaTime);
+            
         }
     }
 
-    private bool IsParticleInsideBounds(Vector3 particlePos,float particleRadius)
-    {
-
-        //Taking into account the particle radius in limits
-        float minX = limits.x + particleRadius;
-        float maxX = limits.x + width - particleRadius;
-        float minY = limits.y + particleRadius;
-        float maxY = limits.y + height - particleRadius;
-
-        bool insideBounds = particlePos.x >= minX && particlePos.y >= minY && particlePos.x <= maxX && particlePos.y <= maxY;
-
-        return insideBounds;
-
-    }
+    
 
     float ComputeDensity(Vector3 posToCompute)
     {
@@ -172,11 +154,16 @@ public class SimulationArea : MonoBehaviour
         //Iterate all the particles summing all the masses multiplied by the smoothing Kernel
 
         Vector3 pressure = Vector3.zero;
+        
         float particlePressure = 1.0f;
         float particleMass = 1.0f;
 
         foreach (var particle in _particles)
         {
+            if(particle.transform.position == posToCompute)
+            {
+                continue;
+            }
 
             float dist = (posToCompute - particle.transform.position).magnitude;
             Vector3 dir = (posToCompute - particle.transform.position) / dist;
@@ -184,45 +171,35 @@ public class SimulationArea : MonoBehaviour
             float density = ComputeDensity(particle.transform.position);
 
             pressure += particlePressure * dir * slope * particleMass / density;
+
+            
         }
 
+        FillDirectionsVec(pressure);
+
         return pressure;
+    }
+
+    void FillDirectionsVec(Vector3 pressure)
+    {
+
+        _directions[counter] = pressure;
+
     }
 
     private void OnDrawGizmos()
     {
 
-        DrawParticles();
-
-        DrawBoundsQuad();
-    }
-
-    private void DrawParticles()
-    {
-        for (int i = 0; i < NumParticles; i++)
+        if (_directions != null && _directions.Length > 0 && Application.isPlaying)
         {
-            for (int j = 0; j < NumParticles; j++)
+
+            for (int i = 0; i < NumTotalOfParticles; i++)
             {
 
-                //TODO: Find a way to save the random positions that the particles will spawn without doing inside draw particles
-
-                Vector3 position = new Vector2(i * particleScale, j * particleScale);
-
-                Gizmos.DrawWireSphere(position, particleScale / 2);
-
+                Gizmos.DrawLine(_particles[i].transform.position, _particles[i].transform.position + _directions[i]);
+                
             }
         }
     }
 
-    private void DrawBoundsQuad()
-    {
-        //Bottom
-        Gizmos.DrawLine(new Vector3(limits.x, limits.y), new Vector3(limits.x + width, limits.y));
-        //Left
-        Gizmos.DrawLine(new Vector3(limits.x, limits.y), new Vector3(limits.x, limits.y + height));
-        //Right
-        Gizmos.DrawLine(new Vector3(limits.x + width, limits.y), new Vector3(limits.x + width, limits.y + height));
-        //Up
-        Gizmos.DrawLine(new Vector3(limits.x, limits.y + height), new Vector3(limits.x + width, limits.y + height));
-    }
 }
