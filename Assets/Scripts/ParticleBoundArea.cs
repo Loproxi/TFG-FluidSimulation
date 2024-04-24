@@ -65,7 +65,7 @@ public class ParticleBoundArea : MonoBehaviour
     private void OnDrawGizmos()
     {
 
-        DrawParticles();
+        //DrawParticles();
 
         DrawBoundsQuad();
 

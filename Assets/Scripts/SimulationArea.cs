@@ -16,6 +16,8 @@ public class SimulationArea : MonoBehaviour
 
     [Header("SPH Related")]
     private float smoothDensityRadius = 15.0f;
+    public float targetDensity;
+    public float pressureMultiplier;
     public struct SPH_Particles
     {
         public Vector2 position;
@@ -73,7 +75,7 @@ public class SimulationArea : MonoBehaviour
     private void ApplyForcesOnParticles()
     {
         
-        for (int i = 0; i < particleBoundArea.NumParticles; i++)
+        for (int i = 0; i < NumTotalOfParticles; i++)
         {
 
             Vector3 particlePos = _particles[i].transform.position;
@@ -82,11 +84,16 @@ public class SimulationArea : MonoBehaviour
 
             if (particleBoundArea.IsParticleInsideBounds(particlePos, particleRadius))
             {
-
                 // Inside Limits
                 _sphparticles[i].velocity += Vector2.down * gravity * Time.deltaTime;
 
-                ComputePressure(particlePos);
+                Vector2 pressure = ComputePressure(particlePos);
+                // F = M * A -> A = F/M
+                Vector2 pressureAcceleration = pressure / ComputeDensity(particlePos);
+
+                _sphparticles[i].velocity += pressureAcceleration * Time.deltaTime;
+
+                particleBoundArea._velocity[i] = _sphparticles[i].velocity;
 
                 // Increment the counter
                 counter++;
@@ -96,6 +103,7 @@ public class SimulationArea : MonoBehaviour
                 {
                     counter = 0;
                 }
+
             }
             else
             {
@@ -130,30 +138,29 @@ public class SimulationArea : MonoBehaviour
 
         foreach (var particle in _particles)
         {
-            
-            float dist = (posToCompute - particle.transform.position).magnitude;
-            if (dist < smoothDensityRadius)
-            {
-                float influence = Tools.Ver_2_SmoothDensityKernel(smoothDensityRadius, dist);
-                density += mass * influence;
-            }
-            else
+
+            if (particle.transform.position == posToCompute)
             {
                 continue;
             }
+
+            float dist = (particle.transform.position - posToCompute).magnitude;
+
+            float influence = Tools.Ver_2_SmoothDensityKernel(smoothDensityRadius, dist);
+            density += mass * influence;
 
         }
 
         return density;
     }
 
-    Vector3 ComputePressure(Vector3 posToCompute)
+    Vector2 ComputePressure(Vector3 posToCompute)
     {
         // TODO: Compute only the with the ones inside of the circle (grid partitioning)
 
         //Iterate all the particles summing all the masses multiplied by the smoothing Kernel
 
-        Vector3 pressure = Vector3.zero;
+        Vector2 pressure = Vector2.zero;
         
         float particlePressure = 1.0f;
         float particleMass = 1.0f;
@@ -165,8 +172,8 @@ public class SimulationArea : MonoBehaviour
                 continue;
             }
 
-            float dist = (posToCompute - particle.transform.position).magnitude;
-            Vector3 dir = (posToCompute - particle.transform.position) / dist;
+            float dist = (particle.transform.position - posToCompute).magnitude;
+            Vector2 dir = (posToCompute - particle.transform.position) / dist;
             float slope = Tools.Derivative_Ver_2_SmoothDensityKernel(smoothDensityRadius, dist);
             float density = ComputeDensity(particle.transform.position);
 
@@ -187,6 +194,12 @@ public class SimulationArea : MonoBehaviour
 
     }
 
+    float ConvertDensityIntoPressure(float density)
+    {
+        float error = density - targetDensity;
+        float pressure = error * pressureMultiplier;
+        return pressure;
+    }
     private void OnDrawGizmos()
     {
 
