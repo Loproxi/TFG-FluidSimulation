@@ -15,7 +15,7 @@ public class Tools
         if (dist >= radius)
             return 0;
 
-        float volume = (Mathf.PI * Mathf.Pow(radius, 4)) / 6; 
+        float volume = Mathf.PI * Mathf.Pow(radius, 4) / 6; 
 
         return (radius - dist) * (radius - dist) / volume;
     }
@@ -26,9 +26,9 @@ public class Tools
         if (dist >= radius)
             return 0;
 
-        float scale = 12 / (Mathf.PI * Mathf.Pow(radius, 4));
+        float scale = 12 / (Mathf.Pow(radius, 4) * Mathf.PI);
 
-        return scale * (dist - radius);
+        return (dist - radius) * scale;
     }
 
     public static float Ver_3_SmoothDensityKernel(float radius, float dist)

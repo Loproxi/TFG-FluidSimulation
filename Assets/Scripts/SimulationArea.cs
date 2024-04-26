@@ -1,5 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -13,9 +16,10 @@ public class SimulationArea : MonoBehaviour
 
     private GameObject[] _particles;
     private Vector3[] _directions;
+    public float[] _densities;
 
     [Header("SPH Related")]
-    private float smoothDensityRadius = 15.0f;
+    public float smoothDensityRadius = 8.2f;
     public float targetDensity;
     public float pressureMultiplier;
     public struct SPH_Particles
@@ -45,6 +49,7 @@ public class SimulationArea : MonoBehaviour
 
     void Update()
     {
+        ComputeDensity();
         ApplyForcesOnParticles();
     }
 
@@ -54,6 +59,7 @@ public class SimulationArea : MonoBehaviour
         _particles = new GameObject[NumTotalOfParticles];
         _sphparticles = new SPH_Particles[NumTotalOfParticles];
         _directions = new Vector3[NumTotalOfParticles];
+        _densities = new float[NumTotalOfParticles];
 
         particleBoundArea.SpawnParticles();
 
@@ -69,6 +75,7 @@ public class SimulationArea : MonoBehaviour
             _sphparticles[i].sprite = circle;
             _sphparticles[i].mass = 1.0f;
             _sphparticles[i].density = 0.0f;
+            _densities[i] = 0.0f;
         }
     }
 
@@ -87,9 +94,11 @@ public class SimulationArea : MonoBehaviour
                 // Inside Limits
                 _sphparticles[i].velocity += Vector2.down * gravity * Time.deltaTime;
 
-                Vector2 pressure = ComputePressure(particlePos);
+                Vector2 pressure = ComputePressure(i);
                 // F = M * A -> A = F/M
-                Vector2 pressureAcceleration = pressure / ComputeDensity(particlePos);
+                Vector2 pressureAcceleration = _densities[i] == 0 ? Vector2.zero : pressure / _densities[i];
+
+                //Debug.Log("Density Value = " + _densities[i]);
 
                 _sphparticles[i].velocity += pressureAcceleration * Time.deltaTime;
 
@@ -120,41 +129,65 @@ public class SimulationArea : MonoBehaviour
             }
 
             _particles[i].transform.position += new Vector3(_sphparticles[i].velocity.x * Time.deltaTime, _sphparticles[i].velocity.y * Time.deltaTime);
-            
+            _sphparticles[i].position = _particles[i].transform.position;
+
+
         }
     }
 
     
 
-    float ComputeDensity(Vector3 posToCompute)
+    void ComputeDensity()
     {
 
         // TODO: Compute only the with the ones inside of the circle (grid partitioning)
-
         //Iterate all the particles summing all the masses multiplied by the smoothing Kernel
 
-        float density = 0.0f;
-        float mass = 1.0f;
+        //How many threads do we have?
+        int numOfThreads = Environment.ProcessorCount;
+        //How many particles each thread should compute
+        int particlesPerThread = NumTotalOfParticles/numOfThreads;
 
-        foreach (var particle in _particles)
+        List<Task> tasks = new List<Task>();
+
+        for (int thread = 0; thread < numOfThreads; thread++)
         {
-
-            if (particle.transform.position == posToCompute)
-            {
-                continue;
-            }
-
-            float dist = (particle.transform.position - posToCompute).magnitude;
-
-            float influence = Tools.Ver_2_SmoothDensityKernel(smoothDensityRadius, dist);
-            density += mass * influence;
+            
+            int startParticleId = thread * particlesPerThread;
+            //The last thread takes a little bit more or less than the others
+            int endParticleId = (thread == numOfThreads - 1) ? NumTotalOfParticles : startParticleId + particlesPerThread;
+            tasks.Add(Task.Run(() => ComputeDensityInParallel(startParticleId, endParticleId)));
 
         }
 
-        return density;
+        Task.WaitAll(tasks.ToArray());
+
     }
 
-    Vector2 ComputePressure(Vector3 posToCompute)
+    void ComputeDensityInParallel(int startId,int endId)
+    {
+
+        Parallel.For(startId, endId, particleId =>
+        {
+            float density = 0.0f;
+            float mass = 1.0f;
+
+            for (int otherId = 0; otherId < NumTotalOfParticles; otherId++)
+            {
+                if (particleId == otherId) { continue; }
+
+                Vector2 particleToOther = (_sphparticles[otherId].position - _sphparticles[particleId].position);
+                float dist = particleToOther.magnitude;
+
+                float influence = Tools.Ver_2_SmoothDensityKernel(smoothDensityRadius, dist);
+                density += mass * influence;
+            }
+            _densities[particleId] = density;
+        });
+
+    }
+
+    Vector2 ComputePressure(int particleId)
     {
         // TODO: Compute only the with the ones inside of the circle (grid partitioning)
 
@@ -162,24 +195,28 @@ public class SimulationArea : MonoBehaviour
 
         Vector2 pressure = Vector2.zero;
         
-        float particlePressure = 1.0f;
         float particleMass = 1.0f;
 
-        foreach (var particle in _particles)
+        for (int otherId = 0; otherId < NumTotalOfParticles; otherId++)
         {
-            if(particle.transform.position == posToCompute)
+            if(particleId == otherId) {continue;}
+
+            Vector2 particleToOther = (_sphparticles[otherId].position - _sphparticles[particleId].position);
+            float dist = particleToOther.magnitude;
+            Vector2 dir = Vector2.zero;
+            if (dist == 0)
             {
-                continue;
+                dir = new Vector2(UnityEngine.Random.Range(-1,1), UnityEngine.Random.Range(-1, 1));
             }
-
-            float dist = (particle.transform.position - posToCompute).magnitude;
-            Vector2 dir = (posToCompute - particle.transform.position) / dist;
+            else
+            {
+                dir = particleToOther / dist;
+            }    
             float slope = Tools.Derivative_Ver_2_SmoothDensityKernel(smoothDensityRadius, dist);
-            float density = ComputeDensity(particle.transform.position);
+            float density = _densities[otherId] == 0 ? 0.0001f : _densities[otherId];
 
-            pressure += particlePressure * dir * slope * particleMass / density;
-
-            
+            pressure += ConvertDensityIntoPressure(density) * dir * slope * particleMass / density;
+           
         }
 
         FillDirectionsVec(pressure);
