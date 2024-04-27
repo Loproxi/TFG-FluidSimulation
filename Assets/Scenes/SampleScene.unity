@@ -157,8 +157,8 @@ MonoBehaviour:
   NumParticles: 15
   particleScale: 4.5
   boundInit: {x: -27.47, y: -16.47}
-  width: 72.4
-  height: 64.8
+  width: 71.5
+  height: 50.9
 --- !u!4 &510212193
 Transform:
   m_ObjectHideFlags: 0
@@ -496,11 +496,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gravity: 0
-  collisionDamping: 0
+  collisionDamping: 0.95
   circle: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
   pcolor: {r: 0, g: 0, b: 1, a: 1}
   _densities: []
-  smoothDensityRadius: 8.2
+  smoothDensityRadius: 6.2
   targetDensity: 2.75
   pressureMultiplier: 5
   particleBoundObject: {fileID: 510212191}

@@ -19,7 +19,7 @@ public class SimulationArea : MonoBehaviour
     public float[] _densities;
 
     [Header("SPH Related")]
-    public float smoothDensityRadius = 8.2f;
+    public float smoothDensityRadius = 1.2f;
     public float targetDensity;
     public float pressureMultiplier;
     public struct SPH_Particles
@@ -199,29 +199,43 @@ public class SimulationArea : MonoBehaviour
 
         for (int otherId = 0; otherId < NumTotalOfParticles; otherId++)
         {
-            if(particleId == otherId) {continue;}
+            if (particleId == otherId) { continue; }
 
             Vector2 particleToOther = (_sphparticles[otherId].position - _sphparticles[particleId].position);
             float dist = particleToOther.magnitude;
             Vector2 dir = Vector2.zero;
             if (dist == 0)
             {
-                dir = new Vector2(UnityEngine.Random.Range(-1,1), UnityEngine.Random.Range(-1, 1));
+                dir = new Vector2(UnityEngine.Random.Range(-1, 1), UnityEngine.Random.Range(-1, 1));
             }
             else
             {
                 dir = particleToOther / dist;
-            }    
+            }
             float slope = Tools.Derivative_Ver_2_SmoothDensityKernel(smoothDensityRadius, dist);
-            float density = _densities[otherId] == 0 ? 0.0001f : _densities[otherId];
 
-            pressure += ConvertDensityIntoPressure(density) * dir * slope * particleMass / density;
-           
+            float otherdensity = _densities[otherId] == 0 ? 0.000001f : _densities[otherId];
+            float density = _densities[particleId] == 0 ? 0.000001f : _densities[particleId];
+
+            float pressureBothReceived = ComputeNewton3rdLawOnParticles(otherdensity, density);
+
+            pressure += pressureBothReceived * dir * slope * particleMass / density;
+
         }
 
         FillDirectionsVec(pressure);
 
         return pressure;
+    }
+
+    //TODO check if there is another way of calculating this
+    private float ComputeNewton3rdLawOnParticles(float otherdensity, float density)
+    {
+        float otherPressure = ConvertDensityIntoPressure(otherdensity);
+        float pressureFromPart = ConvertDensityIntoPressure(density);
+
+        float pressureBothReceived = (pressureFromPart + otherPressure) / 2;
+        return pressureBothReceived;
     }
 
     void FillDirectionsVec(Vector3 pressure)
@@ -231,6 +245,7 @@ public class SimulationArea : MonoBehaviour
 
     }
 
+    //TODO check if there is another way of calculating this
     float ConvertDensityIntoPressure(float density)
     {
         float error = density - targetDensity;
