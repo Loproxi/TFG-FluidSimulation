@@ -154,11 +154,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _position: []
   _velocity: []
-  NumParticles: 15
-  particleScale: 4.5
-  boundInit: {x: -27.47, y: -16.47}
-  width: 71.5
-  height: 50.9
+  NumParticles: 11
+  particleScale: 2.5
+  boundInit: {x: -5, y: 0}
+  width: 15
+  height: 15
 --- !u!4 &510212193
 Transform:
   m_ObjectHideFlags: 0
@@ -353,7 +353,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 6.82, y: 1.85, z: -58.4}
+  m_LocalPosition: {x: 0, y: 5, z: -15}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -501,8 +501,8 @@ MonoBehaviour:
   pcolor: {r: 0, g: 0, b: 1, a: 1}
   _densities: []
   smoothDensityRadius: 6.2
-  targetDensity: 2.75
-  pressureMultiplier: 5
+  targetDensity: 4.05
+  pressureMultiplier: 2.6
   particleBoundObject: {fileID: 510212191}
 --- !u!4 &1649244971
 Transform:

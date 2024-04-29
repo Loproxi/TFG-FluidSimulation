@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -20,7 +19,9 @@ public class SimulationArea : MonoBehaviour
 
     [Header("SPH Related")]
     public float smoothDensityRadius = 1.2f;
+    [Range(0f, 10f)]
     public float targetDensity;
+    [Range(0f, 25f)]
     public float pressureMultiplier;
     public struct SPH_Particles
     {
@@ -47,7 +48,7 @@ public class SimulationArea : MonoBehaviour
         GenerateParticles();
     }
 
-    void Update()
+    void FixedUpdate()
     {
         ComputeDensity();
         ApplyForcesOnParticles();
@@ -89,22 +90,23 @@ public class SimulationArea : MonoBehaviour
 
             float particleRadius = particleBoundArea.particleScale / 2;
 
+            _sphparticles[i].velocity += Vector2.down * gravity * Time.deltaTime;
+
+            Vector2 pressure = ComputePressure(i);
+            // F = M * A -> A = F/M -> A = F/ DENSITY
+            Vector2 pressureAcceleration = _densities[i] < float.Epsilon ? Vector2.zero : pressure / _densities[i];
+
+            _sphparticles[i].velocity += pressureAcceleration * Time.deltaTime;
+
+            particleBoundArea._velocity[i] = _sphparticles[i].velocity;
+
             if (particleBoundArea.IsParticleInsideBounds(particlePos, particleRadius))
             {
                 // Inside Limits
-                _sphparticles[i].velocity += Vector2.down * gravity * Time.deltaTime;
 
-                Vector2 pressure = ComputePressure(i);
-                // F = M * A -> A = F/M
-                Vector2 pressureAcceleration = _densities[i] == 0 ? Vector2.zero : pressure / _densities[i];
+                _particles[i].transform.position += new Vector3(_sphparticles[i].velocity.x * Time.deltaTime, _sphparticles[i].velocity.y * Time.deltaTime);
+                _sphparticles[i].position = _particles[i].transform.position;
 
-                //Debug.Log("Density Value = " + _densities[i]);
-
-                _sphparticles[i].velocity += pressureAcceleration * Time.deltaTime;
-
-                particleBoundArea._velocity[i] = _sphparticles[i].velocity;
-
-                // Increment the counter
                 counter++;
 
                 // Reset the counter if it exceeds the maximum number of particles
@@ -127,11 +129,6 @@ public class SimulationArea : MonoBehaviour
                 _particles[i].transform.position = clampedPos;
 
             }
-
-            _particles[i].transform.position += new Vector3(_sphparticles[i].velocity.x * Time.deltaTime, _sphparticles[i].velocity.y * Time.deltaTime);
-            _sphparticles[i].position = _particles[i].transform.position;
-
-
         }
     }
 
@@ -146,16 +143,18 @@ public class SimulationArea : MonoBehaviour
         //How many threads do we have?
         int numOfThreads = Environment.ProcessorCount;
         //How many particles each thread should compute
-        int particlesPerThread = NumTotalOfParticles/numOfThreads;
+        int particlesPerThread = NumTotalOfParticles / numOfThreads;
 
         List<Task> tasks = new List<Task>();
 
         for (int thread = 0; thread < numOfThreads; thread++)
         {
-            
+
             int startParticleId = thread * particlesPerThread;
             //The last thread takes a little bit more or less than the others
             int endParticleId = (thread == numOfThreads - 1) ? NumTotalOfParticles : startParticleId + particlesPerThread;
+            Debug.Log(startParticleId + " " + endParticleId);
+
             tasks.Add(Task.Run(() => ComputeDensityInParallel(startParticleId, endParticleId)));
 
         }
@@ -204,22 +203,22 @@ public class SimulationArea : MonoBehaviour
             Vector2 particleToOther = (_sphparticles[otherId].position - _sphparticles[particleId].position);
             float dist = particleToOther.magnitude;
             Vector2 dir = Vector2.zero;
-            if (dist == 0)
+            if (dist < 0.55f)
             {
                 dir = new Vector2(UnityEngine.Random.Range(-1, 1), UnityEngine.Random.Range(-1, 1));
             }
             else
             {
-                dir = particleToOther / dist;
+                dir = -particleToOther / dist;
             }
             float slope = Tools.Derivative_Ver_2_SmoothDensityKernel(smoothDensityRadius, dist);
 
-            float otherdensity = _densities[otherId] == 0 ? 0.000001f : _densities[otherId];
-            float density = _densities[particleId] == 0 ? 0.000001f : _densities[particleId];
+            float otherdensity = _densities[otherId] == 0 ? float.Epsilon : _densities[otherId];
+            float density = _densities[particleId] == 0 ? float.Epsilon : _densities[particleId];
 
             float pressureBothReceived = ComputeNewton3rdLawOnParticles(otherdensity, density);
 
-            pressure += pressureBothReceived * dir * slope * particleMass / density;
+            pressure += pressureBothReceived * dir * slope * particleMass / otherdensity;
 
         }
 
@@ -252,6 +251,7 @@ public class SimulationArea : MonoBehaviour
         float pressure = error * pressureMultiplier;
         return pressure;
     }
+
     private void OnDrawGizmos()
     {
 
