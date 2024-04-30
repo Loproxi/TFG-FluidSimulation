@@ -47,14 +47,14 @@ public class ParticleBoundArea : MonoBehaviour
 
     }
 
-    public bool IsParticleInsideBounds(Vector3 particlePos, float particleRadius)
+    public bool IsParticleInsideBounds(Vector3 particlePos)
     {
 
         //Taking into account the particle radius in limits
-        float minX = boundInit.x + particleRadius;
-        float maxX = boundInit.x + width - particleRadius;
-        float minY = boundInit.y + particleRadius;
-        float maxY = boundInit.y + height - particleRadius;
+        float minX = boundInit.x;
+        float maxX = boundInit.x + width;
+        float minY = boundInit.y;
+        float maxY = boundInit.y + height;
 
         bool insideBounds = particlePos.x >= minX && particlePos.y >= minY && particlePos.x <= maxX && particlePos.y <= maxY;
 
@@ -98,5 +98,6 @@ public class ParticleBoundArea : MonoBehaviour
         Gizmos.DrawLine(new Vector3(boundInit.x + width, boundInit.y), new Vector3(boundInit.x + width, boundInit.y + height));
         //Up
         Gizmos.DrawLine(new Vector3(boundInit.x, boundInit.y + height), new Vector3(boundInit.x + width, boundInit.y + height));
+
     }
 }

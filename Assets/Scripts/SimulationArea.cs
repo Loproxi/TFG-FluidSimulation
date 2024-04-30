@@ -68,7 +68,6 @@ public class SimulationArea : MonoBehaviour
         {
             _particles[i] = new GameObject();
             _particles[i].transform.position = particleBoundArea._position[i];
-            _particles[i].transform.localScale = new Vector3(particleBoundArea.particleScale, particleBoundArea.particleScale, particleBoundArea.particleScale);
             _particles[i].AddComponent<SpriteRenderer>().sprite = circle;
             _particles[i].GetComponent<SpriteRenderer>().color = pcolor;
             _sphparticles[i].position = particleBoundArea._position[i];
@@ -88,7 +87,7 @@ public class SimulationArea : MonoBehaviour
 
             Vector3 particlePos = _particles[i].transform.position;
 
-            float particleRadius = particleBoundArea.particleScale / 2;
+            _particles[i].transform.localScale = new Vector3(particleBoundArea.particleScale, particleBoundArea.particleScale, particleBoundArea.particleScale);
 
             _sphparticles[i].velocity += Vector2.down * gravity * Time.deltaTime;
 
@@ -100,7 +99,7 @@ public class SimulationArea : MonoBehaviour
 
             particleBoundArea._velocity[i] = _sphparticles[i].velocity;
 
-            if (particleBoundArea.IsParticleInsideBounds(particlePos, particleRadius))
+            if (particleBoundArea.IsParticleInsideBounds(particlePos))
             {
                 // Inside Limits
 
@@ -124,15 +123,13 @@ public class SimulationArea : MonoBehaviour
 
                 //Assure that our particles are set back to the limits
                 Vector3 clampedPos = particlePos;
-                clampedPos.x = Mathf.Clamp(clampedPos.x, particleBoundArea.boundInit.x + particleRadius, particleBoundArea.boundInit.x + particleBoundArea.width - particleRadius);
-                clampedPos.y = Mathf.Clamp(clampedPos.y, particleBoundArea.boundInit.y + particleRadius, particleBoundArea.boundInit.y + particleBoundArea.height - particleRadius);
+                clampedPos.x = Mathf.Clamp(clampedPos.x, particleBoundArea.boundInit.x, particleBoundArea.boundInit.x + particleBoundArea.width);
+                clampedPos.y = Mathf.Clamp(clampedPos.y, particleBoundArea.boundInit.y, particleBoundArea.boundInit.y + particleBoundArea.height);
                 _particles[i].transform.position = clampedPos;
 
             }
         }
     }
-
-    
 
     void ComputeDensity()
     {
@@ -153,7 +150,6 @@ public class SimulationArea : MonoBehaviour
             int startParticleId = thread * particlesPerThread;
             //The last thread takes a little bit more or less than the others
             int endParticleId = (thread == numOfThreads - 1) ? NumTotalOfParticles : startParticleId + particlesPerThread;
-            Debug.Log(startParticleId + " " + endParticleId);
 
             tasks.Add(Task.Run(() => ComputeDensityInParallel(startParticleId, endParticleId)));
 
