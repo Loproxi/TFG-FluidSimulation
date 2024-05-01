@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -9,7 +10,8 @@ public class GridTest : MonoBehaviour
 
     public int rows, columns;
 
-    Hashtable spatialRepresentation = new Hashtable();
+    private int[] cellsHashed;
+    private List<List<int>> cellData;
 
     [SerializeField] SP_Tile sP_Tile;
     [SerializeField] SP_Particle sP_Particle;
@@ -17,7 +19,7 @@ public class GridTest : MonoBehaviour
     SP_Tile[] grid;
     SP_Particle[] _particles;
 
-    private int NumTotalOfParticles = 9;
+    private int NumTotalOfParticles = 32;
 
     // Start is called before the first frame update
     void Start()
@@ -29,13 +31,16 @@ public class GridTest : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
+        UpdateSpatialHashing(_particles);
     }
 
     private void CreateGrid()
     {
         grid = new SP_Tile[rows * columns];
-        _particles = new SP_Particle[rows * columns];
+        _particles = new SP_Particle[NumTotalOfParticles];
+        cellsHashed = new int[NumTotalOfParticles];
+
+        AllocateCellData();
 
         for (uint i = 0; i < columns; i++)
         {
@@ -48,23 +53,67 @@ public class GridTest : MonoBehaviour
         }
     }
 
+    private void AllocateCellData()
+    {
+        cellData = new List<List<int>>();
+
+        int numCells = rows * columns;
+
+        for (int i = 0; i < numCells; i++)
+        {
+
+            cellData.Add(new List<int>());
+
+        }
+    }
+
     public void SpawnParticles()
     {
         _particles = new SP_Particle[NumTotalOfParticles];
 
         for (int i = 0; i < NumTotalOfParticles; i++)
         {
-            Vector2 randomPos = RandomPosInBounds(0.5f);
+            Vector2 randomPos = RandomPosInBounds(0.25f);
             _particles[i] = Instantiate(sP_Particle, new Vector3(randomPos.x, randomPos.y), Quaternion.identity);
             _particles[i].position = randomPos;
             _particles[i].name = $"Particle: {i}";
-            Vector2 _cell = GetCellFromPosition(_particles[i].position);
-
-            Debug.Log($"Particle: {i}" + "Cell: " + _cell);
+   
         }
     }
 
-    private Vector2 GetCellFromPosition(Vector2 position)
+    private void UpdateSpatialHashing(SP_Particle[] sp_particles)
+    {
+
+        for (int i = 0; i < sp_particles.Length; i++)
+        {
+            
+            Vector2 cell = GetCellFromPosition(sp_particles[i].position);
+            int key = GetKeyFromHashedCell(HashingCell(cell));
+
+            Debug.Log($"ParticleIndex: {i} , Cell: {cell.x},{cell.y} = key:{key}" );
+
+            cellsHashed[i] = key;
+
+            //TODO AVOID ADDING PARTICLE INDEX ALREADY ADD
+            cellData[key].Add(i);
+        }
+
+    }
+
+    private Vector2[] SelectSurroundingCells(Vector2 particlePosition)
+    {
+        Vector2[] nearCells = new Vector2[9];
+        //TRY if returning the keys work as well
+
+        //nearCells[0] -> contains the particle position cell AKA -> the center one
+        //nearCells[1-8] -> the near ones
+
+        //Once we have all the keys we can use it to go to the secondary list of indices and iterate for each particle if it is inside of the smoothing radius
+
+        return nearCells;
+    }
+
+        private Vector2 GetCellFromPosition(Vector2 position)
     {
         Vector2 cellCoord = Vector2.zero;
         cellCoord.x = Mathf.RoundToInt(position.x / sP_Tile.width);
@@ -73,23 +122,23 @@ public class GridTest : MonoBehaviour
         return cellCoord;
     }
 
-    static private int HashingCell(Vector2 cell)
+    private int HashingCell(Vector2 cell)
     {
         int cellHashed = 0;
 
-        int p1 = Mathf.RoundToInt(cell.x * 73856093); // Prime Numbers
-        int p2 = Mathf.RoundToInt(cell.y * 19349663); // Prime Numbers
+        int p1 = (int)cell.x * 73856093; // Prime Numbers
+        int p2 = (int)cell.y * 19349663; // Prime Numbers
 
         cellHashed = p1 ^ p2;
 
         return cellHashed;
     }
 
-    private int FromCellHashedToKey(int cellHashed)
+    private int GetKeyFromHashedCell(int cellHashed)
     {
         int key = 0;
 
-        key = cellHashed % spatialRepresentation.Count;
+        key = cellHashed % cellsHashed.Length;
 
         return key;
     }
