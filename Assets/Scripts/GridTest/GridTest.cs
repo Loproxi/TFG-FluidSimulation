@@ -81,8 +81,19 @@ public class GridTest : MonoBehaviour
         }
     }
 
+    private void ClearIndicesData()
+    {
+        for (int i = 0; i < cellData.Count; i++)
+        {
+            cellData[i].Clear();
+        }
+    }
+
     private void UpdateSpatialHashing(SP_Particle[] sp_particles)
     {
+
+        //Clear the secondary list
+        ClearIndicesData();
 
         for (int i = 0; i < sp_particles.Length; i++)
         {
@@ -94,9 +105,18 @@ public class GridTest : MonoBehaviour
 
             cellsHashed[i] = key;
 
-            //TODO AVOID ADDING PARTICLE INDEX ALREADY ADD
             cellData[key].Add(i);
+
         }
+
+        for (int i = 0; i < sp_particles.Length; i++)
+        {
+
+            Vector2[] neighbourCells = SelectSurroundingCells(sp_particles[i].position);
+
+            IterateNeighboursInsideRadius(neighbourCells, i);
+        }
+        
 
     }
 
@@ -105,15 +125,60 @@ public class GridTest : MonoBehaviour
         Vector2[] nearCells = new Vector2[9];
         //TRY if returning the keys work as well
 
+        Vector2 centerCell = GetCellFromPosition(particlePosition);
+
         //nearCells[0] -> contains the particle position cell AKA -> the center one
         //nearCells[1-8] -> the near ones
+        nearCells[0] = centerCell;
+        nearCells[1] = centerCell + new Vector2(1,0); //Right
+        nearCells[2] = centerCell + new Vector2(1,-1);
+        nearCells[3] = centerCell + new Vector2(0,-1); // Bottom
+        nearCells[4] = centerCell + new Vector2(-1,-1);
+        nearCells[5] = centerCell + new Vector2(-1, 0); // Left
+        nearCells[6] = centerCell + new Vector2(-1, 1);
+        nearCells[7] = centerCell + new Vector2(0, 1); // Up
+        nearCells[8] = centerCell + new Vector2(1, 1);
 
         //Once we have all the keys we can use it to go to the secondary list of indices and iterate for each particle if it is inside of the smoothing radius
 
         return nearCells;
     }
 
-        private Vector2 GetCellFromPosition(Vector2 position)
+    void IterateNeighboursInsideRadius(Vector2[] nearCells, int particleIndex)
+    {
+
+        float radius = sP_Tile.width;
+        float radius2 = radius * radius;
+        SP_Particle particle = _particles[particleIndex];
+
+        for (int i = 1; i < nearCells.Length; i++)
+        {
+
+            int key = GetKeyFromHashedCell(HashingCell(nearCells[i]));
+
+            if (cellData[key].Count == 0) continue;
+
+            //TODO: Sometimes if the nearCell Coords are negative the key is negative also and that produces that cellData doesnt work because there are no negative index
+
+            for (int j = 0; j < cellData[key].Count; j++)
+            {
+                
+                int neighbourIndex = cellData[key][j];
+
+                if ((particle.position - _particles[neighbourIndex].position).sqrMagnitude <= radius2)
+                {
+                    //Compute Density of those
+
+                    Debug.Log($"ParticleIndex: {i}, NeighbourIndex {neighbourIndex} , key:{key}");
+                }
+
+            }
+
+        }
+
+    }
+
+    private Vector2 GetCellFromPosition(Vector2 position)
     {
         Vector2 cellCoord = Vector2.zero;
         cellCoord.x = Mathf.RoundToInt(position.x / sP_Tile.width);
