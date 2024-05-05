@@ -99,13 +99,13 @@ public class GridTest : MonoBehaviour
         {
             
             Vector2 cell = GetCellFromPosition(sp_particles[i].position);
-            int key = GetKeyFromHashedCell(HashingCell(cell));
+            uint key = GetKeyFromHashedCell(HashingCell(cell));
 
             Debug.Log($"ParticleIndex: {i} , Cell: {cell.x},{cell.y} = key:{key}" );
 
-            cellsHashed[i] = key;
+            cellsHashed[i] = (int)key;
 
-            cellData[key].Add(i);
+            cellData[(int)key].Add(i);
 
         }
 
@@ -126,6 +126,8 @@ public class GridTest : MonoBehaviour
         //TRY if returning the keys work as well
 
         Vector2 centerCell = GetCellFromPosition(particlePosition);
+        
+        //Todo: Check if those Cells are out of the limits
 
         //nearCells[0] -> contains the particle position cell AKA -> the center one
         //nearCells[1-8] -> the near ones
@@ -154,28 +156,26 @@ public class GridTest : MonoBehaviour
         for (int i = 1; i < nearCells.Length; i++)
         {
 
-            int key = GetKeyFromHashedCell(HashingCell(nearCells[i]));
+            uint key = GetKeyFromHashedCell(HashingCell(nearCells[i]));
 
-            if (cellData[key].Count == 0) continue;
+            if (cellData[(int)key].Count == 0) continue;
 
             //TODO: Sometimes if the nearCell Coords are negative the key is negative also and that produces that cellData doesnt work because there are no negative index
+            //TODO: 
 
-            for (int j = 0; j < cellData[key].Count; j++)
+            for (int j = 0; j < cellData[(int)key].Count; j++)
             {
                 
-                int neighbourIndex = cellData[key][j];
+                int neighbourIndex = cellData[(int)key][j];
 
-                if ((particle.position - _particles[neighbourIndex].position).sqrMagnitude <= radius2)
+                if ((_particles[neighbourIndex].position - particle.position).sqrMagnitude <= radius2)
                 {
                     //Compute Density of those
 
-                    Debug.Log($"ParticleIndex: {i}, NeighbourIndex {neighbourIndex} , key:{key}");
+                    Debug.Log($"ParticleIndex: {i} has this NeighbourIndex {neighbourIndex} in radius");
                 }
-
             }
-
         }
-
     }
 
     private Vector2 GetCellFromPosition(Vector2 position)
@@ -187,23 +187,23 @@ public class GridTest : MonoBehaviour
         return cellCoord;
     }
 
-    private int HashingCell(Vector2 cell)
+    private uint HashingCell(Vector2 cell)
     {
-        int cellHashed = 0;
+        uint cellHashed = 0;
 
-        int p1 = (int)cell.x * 73856093; // Prime Numbers
-        int p2 = (int)cell.y * 19349663; // Prime Numbers
+        uint p1 = (uint)cell.x * 73856093; // Prime Numbers
+        uint p2 = (uint)cell.y * 19349663; // Prime Numbers
 
         cellHashed = p1 ^ p2;
 
         return cellHashed;
     }
 
-    private int GetKeyFromHashedCell(int cellHashed)
+    private uint GetKeyFromHashedCell(uint cellHashed)
     {
-        int key = 0;
+        uint key = 0;
 
-        key = cellHashed % cellsHashed.Length;
+        key = cellHashed % (uint)cellsHashed.Length;
 
         return key;
     }
@@ -223,5 +223,15 @@ public class GridTest : MonoBehaviour
 
         return new Vector2(x, y);
 
+    }
+
+    private void OnDrawGizmos()
+    {
+        for (int i = 0; i < NumTotalOfParticles; i++)
+        {
+
+            Gizmos.DrawWireSphere(_particles[i].position, (sP_Tile.width * sP_Tile.height));
+
+        }
     }
 }
