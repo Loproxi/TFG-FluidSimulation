@@ -10,8 +10,7 @@ public class GridTest : MonoBehaviour
 
     public int rows, columns;
 
-    private int[] cellsHashed;
-    private List<List<int>> cellData;
+    private Dictionary<int,List<int>> spatialHashingInfo;
 
     [SerializeField] SP_Tile sP_Tile;
     [SerializeField] SP_Particle sP_Particle;
@@ -19,7 +18,7 @@ public class GridTest : MonoBehaviour
     SP_Tile[] grid;
     SP_Particle[] _particles;
 
-    private int NumTotalOfParticles = 32;
+    private int NumTotalOfParticles = 20;
 
     // Start is called before the first frame update
     void Start()
@@ -38,9 +37,10 @@ public class GridTest : MonoBehaviour
     {
         grid = new SP_Tile[rows * columns];
         _particles = new SP_Particle[NumTotalOfParticles];
-        cellsHashed = new int[NumTotalOfParticles];
-
-        AllocateCellData();
+        spatialHashingInfo = new Dictionary<int, List<int>>
+        {
+            { 0, new List<int>() }
+        };
 
         for (uint i = 0; i < columns; i++)
         {
@@ -50,20 +50,6 @@ public class GridTest : MonoBehaviour
                 tileRef.position = new Vector2(i * sP_Tile.width, j * sP_Tile.height);
                 tileRef.name = $"Tile {i} {j}";
             }
-        }
-    }
-
-    private void AllocateCellData()
-    {
-        cellData = new List<List<int>>();
-
-        int numCells = rows * columns;
-
-        for (int i = 0; i < numCells; i++)
-        {
-
-            cellData.Add(new List<int>());
-
         }
     }
 
@@ -81,11 +67,29 @@ public class GridTest : MonoBehaviour
         }
     }
 
-    private void ClearIndicesData()
+    private void ClearSpatialHashingLists()
     {
-        for (int i = 0; i < cellData.Count; i++)
+        //Update the remove function
+        for(int i = 0;i < NumTotalOfParticles;i++)
         {
-            cellData[i].Clear();
+            RemoveParticleFromList(i);
+        }
+
+    }
+
+    private void RemoveParticleFromList(int particleIndex)
+    {
+        uint key = GetKeyFromHashedCell(HashingCell(_particles[particleIndex].position));
+        if(spatialHashingInfo.ContainsKey((int)key))
+        {
+            //Erase particle indices from list
+            spatialHashingInfo[(int)key].Remove(particleIndex);
+
+            if(spatialHashingInfo[(int)key].Count == 0)
+            {
+                //Erase whole entry
+                spatialHashingInfo.Remove((int)key);
+            }
         }
     }
 
@@ -93,7 +97,7 @@ public class GridTest : MonoBehaviour
     {
 
         //Clear the secondary list
-        ClearIndicesData();
+        ClearSpatialHashingLists();
 
         for (int i = 0; i < sp_particles.Length; i++)
         {
@@ -101,11 +105,12 @@ public class GridTest : MonoBehaviour
             Vector2 cell = GetCellFromPosition(sp_particles[i].position);
             uint key = GetKeyFromHashedCell(HashingCell(cell));
 
-            Debug.Log($"ParticleIndex: {i} , Cell: {cell.x},{cell.y} = key:{key}" );
+            if (spatialHashingInfo.ContainsKey((int)key) == false)
+            {
+                spatialHashingInfo[(int)key] = new List<int>();
+            }
 
-            cellsHashed[i] = (int)key;
-
-            cellData[(int)key].Add(i);
+            spatialHashingInfo[(int)key].Add(i);
 
         }
 
@@ -150,7 +155,7 @@ public class GridTest : MonoBehaviour
     {
 
         float radius = sP_Tile.width;
-        float radius2 = radius * radius;
+        float radius2 = radius*radius;
         SP_Particle particle = _particles[particleIndex];
 
         for (int i = 1; i < nearCells.Length; i++)
@@ -158,21 +163,23 @@ public class GridTest : MonoBehaviour
 
             uint key = GetKeyFromHashedCell(HashingCell(nearCells[i]));
 
-            if (cellData[(int)key].Count == 0) continue;
-
             //TODO: Sometimes if the nearCell Coords are negative the key is negative also and that produces that cellData doesnt work because there are no negative index
-            //TODO: 
-
-            for (int j = 0; j < cellData[(int)key].Count; j++)
+            if(spatialHashingInfo.ContainsKey((int)key))
             {
-                
-                int neighbourIndex = cellData[(int)key][j];
 
-                if ((_particles[neighbourIndex].position - particle.position).sqrMagnitude <= radius2)
+                for (int j = 0; j < spatialHashingInfo[(int)key].Count; j++)
                 {
-                    //Compute Density of those
 
-                    Debug.Log($"ParticleIndex: {i} has this NeighbourIndex {neighbourIndex} in radius");
+                    int neighbourIndex = spatialHashingInfo[(int)key][j];
+
+                    if (particleIndex == neighbourIndex) continue;
+
+                    if ((particle.position - _particles[neighbourIndex].position).sqrMagnitude <= radius2)
+                    {
+
+                        //Compute Density of those
+
+                    }
                 }
             }
         }
@@ -203,7 +210,7 @@ public class GridTest : MonoBehaviour
     {
         uint key = 0;
 
-        key = cellHashed % (uint)cellsHashed.Length;
+        key = cellHashed % (uint)spatialHashingInfo.Count;
 
         return key;
     }
@@ -230,7 +237,7 @@ public class GridTest : MonoBehaviour
         for (int i = 0; i < NumTotalOfParticles; i++)
         {
 
-            Gizmos.DrawWireSphere(_particles[i].position, (sP_Tile.width * sP_Tile.height));
+            Gizmos.DrawWireSphere(_particles[i].position, sP_Tile.width);
 
         }
     }
