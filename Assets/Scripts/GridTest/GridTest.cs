@@ -69,12 +69,25 @@ public class GridTest : MonoBehaviour
 
     private void ClearSpatialHashingLists()
     {
-        //Update the remove function
-        for(int i = 0;i < NumTotalOfParticles;i++)
+        List<int> keysToRemove = new List<int>();
+
+        foreach (var cellKeys in spatialHashingInfo.Keys)
         {
-            RemoveParticleFromList(i);
+            if (spatialHashingInfo[cellKeys].Count == 0)
+            {
+                keysToRemove.Add(cellKeys);
+            }
         }
 
+        foreach (var key in keysToRemove)
+        {
+            spatialHashingInfo.Remove(key);
+        }
+
+        foreach (var particlesLists in spatialHashingInfo.Values)
+        {
+            particlesLists.Clear();
+        }
     }
 
     private void RemoveParticleFromList(int particleIndex)
@@ -176,7 +189,7 @@ public class GridTest : MonoBehaviour
 
                     if ((particle.position - _particles[neighbourIndex].position).sqrMagnitude <= radius2)
                     {
-
+                        Debug.Log($"ParticleIndex: {particleIndex} has this NeighbourIndex {neighbourIndex} in radius");
                         //Compute Density of those
 
                     }
@@ -210,7 +223,7 @@ public class GridTest : MonoBehaviour
     {
         uint key = 0;
 
-        key = cellHashed % (uint)spatialHashingInfo.Count;
+        key = cellHashed % (uint)NumTotalOfParticles;
 
         return key;
     }
