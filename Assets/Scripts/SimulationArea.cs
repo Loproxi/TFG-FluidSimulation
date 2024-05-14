@@ -95,7 +95,7 @@ public class SimulationArea : MonoBehaviour
             // F = M * A -> A = F/M -> A = F/ DENSITY
             Vector2 pressureAcceleration = _densities[i] < float.Epsilon ? Vector2.zero : pressure / _densities[i];
 
-            //_sphparticles[i].velocity += pressureAcceleration * Time.deltaTime;
+            _sphparticles[i].velocity += pressureAcceleration * Time.deltaTime;
 
             particleBoundArea._velocity[i] = _sphparticles[i].velocity;
 

@@ -47,7 +47,8 @@ public class GridTest : MonoBehaviour
             for (uint j = 0; j < rows; j++)
             {
                 var tileRef = Instantiate(sP_Tile, new Vector3(i * sP_Tile.width, j * sP_Tile.height), Quaternion.identity);
-                tileRef.position = new Vector2(i * sP_Tile.width, j * sP_Tile.height);
+                Vector2 pos = new Vector2(i * sP_Tile.width, j * sP_Tile.height);
+                tileRef.UpdatePosition(pos);
                 tileRef.name = $"Tile {i} {j}";
             }
         }
@@ -138,32 +139,6 @@ public class GridTest : MonoBehaviour
 
     }
 
-    private Vector2[] SelectSurroundingCells(Vector2 particlePosition)
-    {
-        Vector2[] nearCells = new Vector2[9];
-        //TRY if returning the keys work as well
-
-        Vector2 centerCell = GetCellFromPosition(particlePosition);
-        
-        //Todo: Check if those Cells are out of the limits
-
-        //nearCells[0] -> contains the particle position cell AKA -> the center one
-        //nearCells[1-8] -> the near ones
-        nearCells[0] = centerCell;
-        nearCells[1] = centerCell + new Vector2(1,0); //Right
-        nearCells[2] = centerCell + new Vector2(1,-1);
-        nearCells[3] = centerCell + new Vector2(0,-1); // Bottom
-        nearCells[4] = centerCell + new Vector2(-1,-1);
-        nearCells[5] = centerCell + new Vector2(-1, 0); // Left
-        nearCells[6] = centerCell + new Vector2(-1, 1);
-        nearCells[7] = centerCell + new Vector2(0, 1); // Up
-        nearCells[8] = centerCell + new Vector2(1, 1);
-
-        //Once we have all the keys we can use it to go to the secondary list of indices and iterate for each particle if it is inside of the smoothing radius
-
-        return nearCells;
-    }
-
     void IterateNeighboursInsideRadius(Vector2[] nearCells, int particleIndex)
     {
 
@@ -196,6 +171,32 @@ public class GridTest : MonoBehaviour
                 }
             }
         }
+    }
+
+    private Vector2[] SelectSurroundingCells(Vector2 particlePosition)
+    {
+        Vector2[] nearCells = new Vector2[9];
+        //TRY if returning the keys work as well
+
+        Vector2 centerCell = GetCellFromPosition(particlePosition);
+
+        //Todo: Check if those Cells are out of the limits
+
+        //nearCells[0] -> contains the particle position cell AKA -> the center one
+        //nearCells[1-8] -> the near ones
+        nearCells[0] = centerCell;
+        nearCells[1] = centerCell + new Vector2(1, 0); //Right
+        nearCells[2] = centerCell + new Vector2(1, -1);
+        nearCells[3] = centerCell + new Vector2(0, -1); // Bottom
+        nearCells[4] = centerCell + new Vector2(-1, -1);
+        nearCells[5] = centerCell + new Vector2(-1, 0); // Left
+        nearCells[6] = centerCell + new Vector2(-1, 1);
+        nearCells[7] = centerCell + new Vector2(0, 1); // Up
+        nearCells[8] = centerCell + new Vector2(1, 1);
+
+        //Once we have all the keys we can use it to go to the secondary list of indices and iterate for each particle if it is inside of the smoothing radius
+
+        return nearCells;
     }
 
     private Vector2 GetCellFromPosition(Vector2 position)

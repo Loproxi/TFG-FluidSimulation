@@ -25,7 +25,7 @@ public class ParticleBoundArea : MonoBehaviour
         for (int i = 0; i < NumTotalOfParticles; i++)
         {
 
-            _position[i] = RandomPosInBounds(particleScale / 2);
+            _position[i] = RandomPosInBounds(particleScale / 10);
             _velocity[i] = Vector2.zero;
 
         }
@@ -49,12 +49,12 @@ public class ParticleBoundArea : MonoBehaviour
 
     public bool IsParticleInsideBounds(Vector3 particlePos)
     {
-
+        float particleRadius = particleScale / 10;
         //Taking into account the particle radius in limits
-        float minX = boundInit.x;
-        float maxX = boundInit.x + width;
-        float minY = boundInit.y;
-        float maxY = boundInit.y + height;
+        float minX = boundInit.x + particleRadius;
+        float maxX = boundInit.x + width - particleRadius;
+        float minY = boundInit.y + particleRadius;
+        float maxY = boundInit.y + height - particleRadius;
 
         bool insideBounds = particlePos.x >= minX && particlePos.y >= minY && particlePos.x <= maxX && particlePos.y <= maxY;
 
