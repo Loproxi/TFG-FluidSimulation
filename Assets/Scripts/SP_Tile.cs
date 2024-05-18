@@ -9,7 +9,7 @@ public enum STATES
     MAX
 }
 
-public class SP_Tile : MonoBehaviour
+public class SP_Tile 
 {
     public Vector2 position { get; private set; }
     public float width = 2.0f;
@@ -18,8 +18,7 @@ public class SP_Tile : MonoBehaviour
 
     public void UpdatePosition(Vector2 position)
     {
-        this.position = position;
-        gameObject.transform.position = position;  
+        this.position = position; 
     }
 
     public void UpdateState(STATES newState)

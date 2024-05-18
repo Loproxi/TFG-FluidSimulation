@@ -52,4 +52,22 @@ public class FluidInitializer : MonoBehaviour
         return insideBounds;
 
     }
+
+    private void OnDrawGizmos()
+    {
+        DrawBoundsQuad();
+    }
+
+    private void DrawBoundsQuad()
+    {
+        //Bottom
+        Gizmos.DrawLine(new Vector3(minBounds.x, minBounds.y), new Vector3(maxBounds.x, minBounds.y));
+        //Left
+        Gizmos.DrawLine(new Vector3(minBounds.x, minBounds.y), new Vector3(minBounds.x, maxBounds.y));
+        //Right
+        Gizmos.DrawLine(new Vector3(maxBounds.x, minBounds.y), new Vector3(maxBounds.x, maxBounds.y));
+        //Up
+        Gizmos.DrawLine(new Vector3(minBounds.x, maxBounds.y), new Vector3(maxBounds.x , maxBounds.y));
+
+    }
 }

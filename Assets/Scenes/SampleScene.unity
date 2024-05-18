@@ -223,7 +223,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &510212192
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -267,6 +267,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 629181854}
+  - component: {fileID: 629181855}
   - component: {fileID: 629181853}
   m_Layer: 0
   m_Name: FluidSimulation
@@ -287,8 +288,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19feae0ffe3b3184895856ffc060d498, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fluidParticle: {fileID: 1301275777}
-  smoothDensityRadius: 1
+  fluidParticle: {fileID: 1301275780}
+  smoothDensityRadius: 5.51
 --- !u!4 &629181854
 Transform:
   m_ObjectHideFlags: 0
@@ -304,6 +305,23 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 7
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &629181855
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 629181852}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b65677ac1207024088b468a6322e3b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  positions: []
+  numParticles: 15
+  particleScale: 1
+  minBounds: {x: -6.5, y: -6.5}
+  maxBounds: {x: 6.5, y: 6.5}
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -500,6 +518,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1301275779}
   - component: {fileID: 1301275778}
+  - component: {fileID: 1301275780}
   m_Layer: 0
   m_Name: FluidParticle
   m_TagString: Untagged
@@ -567,13 +586,25 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1301275777}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 12.15, y: 6.9174466, z: -5.7217784}
+  m_LocalPosition: {x: 22.16, y: 6.9174466, z: -5.7217784}
   m_LocalScale: {x: 0.6, y: 0.6, z: 0.6}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1301275780
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1301275777}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d89abcdedf5790488e7d2c32d2e587f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1495877720
 GameObject:
   m_ObjectHideFlags: 0
@@ -696,7 +727,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1649244970
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -15,6 +15,7 @@ public class FluidParticle : MonoBehaviour
         this.position = position;
         this.velocity = velocity;
         this.mass = mass;
+        gameObject.transform.position = position;
     }
 
     public void UpdatePosition(Vector2 newPos)
@@ -25,12 +26,18 @@ public class FluidParticle : MonoBehaviour
 
     public void UpdateVelocity(Vector2 newVel)
     {
-        velocity = newVel;
+        velocity += newVel;
     }
 
     public void UpdateDensity(float newDensity)
     {
         density = newDensity;
+    }
+
+    public void MoveParticle(Vector2 velocity)
+    {
+        position += velocity;
+        gameObject.transform.position += new Vector3(velocity.x, velocity.y);
     }
 
 }

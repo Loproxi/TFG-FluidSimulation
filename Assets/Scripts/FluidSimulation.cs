@@ -8,11 +8,12 @@ using static UnityEngine.ParticleSystem;
 public class FluidSimulation : MonoBehaviour
 {
     [Header("Particle Related")]
-    public GameObject fluidParticle;
+    public FluidParticle fluidParticle;
     private FluidParticle[] _particles;
     private FluidInitializer _fluidInitializer;
 
     private SP_Tile tile;
+    private float deltaTime = 0.0f;
 
     [Header("SPH Related")]
     public float smoothDensityRadius = 1.0f;
@@ -23,9 +24,14 @@ public class FluidSimulation : MonoBehaviour
         InitializeSimulation();
     }
 
+    private void Update()
+    {
+        deltaTime = Time.deltaTime;
+    }
+
     private void FixedUpdate()
     {
-        
+        UpdateSimulation();
     }
 
     #region InitSimulation
@@ -34,11 +40,13 @@ public class FluidSimulation : MonoBehaviour
     {
 
         _fluidInitializer = gameObject.GetComponent<FluidInitializer>();
-        compactHashing = new CompactHashing(_fluidInitializer.numParticles, tile.width, tile.height);
-
+        
         if(_fluidInitializer != null )
         {
             SpawnParticles();
+            tile = new SP_Tile();
+            compactHashing = new CompactHashing(_fluidInitializer.numParticles, tile.width, tile.height);
+
         }
         else
         {
@@ -52,8 +60,8 @@ public class FluidSimulation : MonoBehaviour
 
         for (int i = 0; i < _fluidInitializer.numParticles; i++)
         {
-            Instantiate(fluidParticle, gameObject.transform);
-            _particles[i].UpdatePosition(_fluidInitializer.positions[i]);
+            _particles[i] = Instantiate(fluidParticle, gameObject.transform);
+            _particles[i].InitializeParticle(_fluidInitializer.positions[i],Vector2.zero,1.0f);
             _particles[i].name = $"Particle: {i}";
         }
     }
@@ -62,7 +70,12 @@ public class FluidSimulation : MonoBehaviour
 
     void UpdateSimulation()
     {
-        //First Compute Density
+        //First -> Update GridPartitioning && Compute Density
+        Parallel.For(0, _fluidInitializer.numParticles, particleId =>
+        {
+            UpdateSpatialHashing(particleId);
+        });
+
         Parallel.For(0, _fluidInitializer.numParticles, particleId =>
         {
             ComputeDensity(particleId);
@@ -71,6 +84,24 @@ public class FluidSimulation : MonoBehaviour
         //Second Apply the forces (Pressure & Viscosity)
         ApplyForces();
 
+        compactHashing.ClearSpatialHashingLists();
+    }
+
+    private void UpdateSpatialHashing(int particleId)
+    {
+
+        Vector2 cell = compactHashing.GetCellFromPosition(_particles[particleId].position);
+        uint key = compactHashing.GetKeyFromHashedCell(compactHashing.HashingCell(cell));
+
+        lock (compactHashing.spatialHashingInfo)
+        {
+            if (compactHashing.spatialHashingInfo.ContainsKey((int)key) == false)
+            {
+                compactHashing.spatialHashingInfo[(int)key] = new List<int>();
+            }
+
+            compactHashing.spatialHashingInfo[(int)key].Add(particleId);
+        }
     }
 
     void ComputeDensity(int particleIndex)
@@ -112,14 +143,77 @@ public class FluidSimulation : MonoBehaviour
         _particles[particleIndex].UpdateDensity(density);
     }
 
-    void ApplyForces()
+    void ComputePressureForce(int particleIndex)
     {
         
+        FluidParticle particle = _particles[particleIndex];
+        //Compute radius * radius to avoid computing square
+        float radius2 = smoothDensityRadius * smoothDensityRadius;
+        Vector2 pressure = Vector2.zero;
+
+        Vector2[] nearCells = compactHashing.SelectSurroundingCells(particle.position);
+
+        for (int i = 1; i < nearCells.Length; i++)
+        {
+            uint key = compactHashing.GetKeyFromHashedCell(compactHashing.HashingCell(nearCells[i]));
+
+            //TODO: Sometimes if the nearCell Coords are negative the key is negative also and that produces that cellData doesnt work because there are no negative index
+            if (compactHashing.spatialHashingInfo.ContainsKey((int)key))
+            {
+
+                for (int j = 0; j < compactHashing.spatialHashingInfo[(int)key].Count; j++)
+                {
+                    int neighbourIndex = compactHashing.spatialHashingInfo[(int)key][j];
+                    if (particleIndex == neighbourIndex) continue;
+
+                    Vector2 particleToOther = (particle.position - _particles[neighbourIndex].position);
+                    float sqrDistFromCenterToNeighbour = particleToOther.sqrMagnitude;
+                    if (sqrDistFromCenterToNeighbour > radius2) continue;
+
+                    //Compute Density of those
+                    float dist = Mathf.Sqrt(sqrDistFromCenterToNeighbour);
+                    Vector2 dir = dist > 0 ? -particleToOther/dist : Vector2.up;
+                    float slope = Tools.Derivative_Ver_2_SmoothDensityKernel(smoothDensityRadius, dist);
+                    float pressureBetweenParticles = (_particles[particleIndex].density + _particles[neighbourIndex].density) * 0.5f;
+
+                    if (_particles[neighbourIndex].density < float.Epsilon) continue;
+
+                    pressure += dir * slope * pressureBetweenParticles / _particles[neighbourIndex].density;
+                }
+            }
+        }
+
+        Vector2 pressureAcceleration = Vector2.zero;
+
+        if (_particles[particleIndex].density > float.Epsilon)
+        {
+            pressureAcceleration = pressure / _particles[particleIndex].density;
+        }
+
+        _particles[particleIndex].UpdateVelocity(pressureAcceleration * deltaTime);
+
+    }
+    void ApplyForces()
+    {
+        // Compute Acceleration -> velocity -> position -> resolve collisions with bounds
+
+        Parallel.For(0, _fluidInitializer.numParticles, particleId =>
+        {
+            ComputePressureForce(particleId);
+        });
+
+        for (int i = 0; i < _fluidInitializer.numParticles; i++)
+        {
+            _particles[i].MoveParticle(_particles[i].velocity);
+        }
     }
 
-    void ComputePressureForce()
+    private void OnDrawGizmos()
     {
-
+        //foreach (var particle in _particles)
+        //{
+        //    Gizmos.DrawWireSphere(particle.position, smoothDensityRadius);
+        //}
     }
 }
 

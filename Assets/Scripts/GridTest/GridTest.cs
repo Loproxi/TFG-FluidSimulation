@@ -46,10 +46,10 @@ public class GridTest : MonoBehaviour
         {
             for (uint j = 0; j < rows; j++)
             {
-                var tileRef = Instantiate(sP_Tile, new Vector3(i * sP_Tile.width, j * sP_Tile.height), Quaternion.identity);
-                Vector2 pos = new Vector2(i * sP_Tile.width, j * sP_Tile.height);
-                tileRef.UpdatePosition(pos);
-                tileRef.name = $"Tile {i} {j}";
+                //var tileRef = Instantiate(sP_Tile, new Vector3(i * sP_Tile.width, j * sP_Tile.height), Quaternion.identity);
+                //Vector2 pos = new Vector2(i * sP_Tile.width, j * sP_Tile.height);
+                //tileRef.UpdatePosition(pos);
+                //tileRef.name = $"Tile {i} {j}";
             }
         }
     }
