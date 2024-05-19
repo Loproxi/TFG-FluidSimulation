@@ -13,12 +13,7 @@ public class FluidInitializer : MonoBehaviour
     public Vector2 minBounds = new Vector2(0,0);
     public Vector2 maxBounds = new Vector2(10,10);
 
-    private void Start()
-    {
-        InitializeParticles();
-    }
-
-    void InitializeParticles()
+    public void InitializeParticles()
     {
         positions = new Vector2[numParticles];
 

@@ -5,30 +5,39 @@ using UnityEngine;
 public class Tools
 {
     
-    public static float Ver_1_SmoothDensityKernel(float radius, float dist)
+    public static float Ver_1_SmoothNearDensityKernel(float radius, float dist)
     {
-        return Mathf.Max(0, radius - dist);
+        if(dist < radius)
+        {
+            float volume = 10 / (Mathf.PI * Mathf.Pow(radius, 5));
+            return (radius - dist) * (radius - dist) * (radius - dist) * volume;
+        }
+        return 0.0f;
     }
 
     public static float Ver_2_SmoothDensityKernel(float radius, float dist)
     {
-        if (dist >= radius)
-            return 0;
+        if (dist < radius)
+        {
 
-        float volume = Mathf.PI * Mathf.Pow(radius, 4) / 6; 
+            float volume = 6 / (Mathf.PI * Mathf.Pow(radius, 4));
+            return (radius - dist) * (radius - dist) * volume;
 
-        return (radius - dist) * (radius - dist) / volume;
+        }
+        return 0;
     }
 
     //This function returns the slope of the smooth density Kernel V2 
     public static float Derivative_Ver_2_SmoothDensityKernel(float radius, float dist)
     {
-        if (dist >= radius)
-            return 0;
+        if (dist <= radius)
+        {
 
-        float scale = 12 / (Mathf.Pow(radius, 4) * Mathf.PI);
+            float volume = 12 / (Mathf.Pow(radius, 4) * Mathf.PI);
+            return -(radius - dist) * volume;
 
-        return (dist - radius) * scale;
+        }
+        return 0;
     }
 
     public static float Ver_3_SmoothDensityKernel(float radius, float dist)
@@ -39,14 +48,16 @@ public class Tools
         return smoothvalue * smoothvalue * smoothvalue / volume;
     }
 
-    public static float Derivative_Ver_3_SmoothDensityKernel(float radius, float dist)
+    public static float Derivative_Ver_3_SmoothNearDensityKernel(float radius, float dist)
     {
-        if (dist >= radius)return 0;
+        if (dist <= radius)
+        {
 
-        float f = radius * radius - dist * dist;
-        float scale = -24 / (Mathf.PI * Mathf.Pow(radius, 8));
+            float volume = 30 / (Mathf.Pow(radius, 5) * Mathf.PI);
+            return -(radius - dist) * (radius - dist) * volume;
 
-        return scale * dist * f * f;
+        }
+        return 0;
     }
 
 }
