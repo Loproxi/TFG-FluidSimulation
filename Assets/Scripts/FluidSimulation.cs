@@ -29,9 +29,9 @@ public class FluidSimulation : MonoBehaviour
         InitializeSimulation();
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
-        deltaTime = Time.deltaTime;
+        deltaTime = Time.fixedDeltaTime;
         UpdateSimulation();
     }
 
@@ -73,26 +73,36 @@ public class FluidSimulation : MonoBehaviour
 
     void UpdateSimulation()
     {
+        UnityEngine.Profiling.Profiler.BeginSample("Update Spatial Hashing");
         //First -> Update GridPartitioning && Compute Density
         Parallel.For(0, _fluidInitializer.numParticles, particleId =>
         {
             UpdateSpatialHashing(particleId);
         });
 
+        UnityEngine.Profiling.Profiler.EndSample();
+
+        UnityEngine.Profiling.Profiler.BeginSample("Compute Density");
         Parallel.For(0, _fluidInitializer.numParticles, particleId =>
         {
             ComputeDensity(particleId);
         });
-        
-        //Second Apply the forces (Pressure & Viscosity)
-        ApplyForces();
 
+        UnityEngine.Profiling.Profiler.EndSample();
+        //Second Apply the forces (Pressure & Viscosity)
+        UnityEngine.Profiling.Profiler.BeginSample("Compute Pressure and Move Particles");
+        ApplyForces();
+        UnityEngine.Profiling.Profiler.EndSample();
+
+        UnityEngine.Profiling.Profiler.BeginSample("CheckCollisions");
         for (int i = 0; i < _fluidInitializer.numParticles; i++)
         {
             CheckBoundaryCollisions(i);
         }
-
+        UnityEngine.Profiling.Profiler.EndSample();
         compactHashing.ClearSpatialHashingLists();
+
+        
     }
 
     private void UpdateSpatialHashing(int particleId)
@@ -123,32 +133,26 @@ public class FluidSimulation : MonoBehaviour
 
         Vector2[] nearCells = compactHashing.SelectSurroundingCells(particle.position);
 
-        for (int i = 1; i < nearCells.Length; i++)
+        foreach (Vector2 nearCell in nearCells)
         {
-            uint key = compactHashing.GetKeyFromHashedCell(compactHashing.HashingCell(nearCells[i]));
+            uint key = compactHashing.GetKeyFromHashedCell(compactHashing.HashingCell(nearCell));
 
-            //TODO: Sometimes if the nearCell Coords are negative the key is negative also and that produces that cellData doesnt work because there are no negative index
-            if (compactHashing.spatialHashingInfo.ContainsKey((int)key))
+            if (compactHashing.spatialHashingInfo.TryGetValue((int)key, out var cellParticles))
             {
-
-                for (int j = 0; j < compactHashing.spatialHashingInfo[(int)key].Count; j++)
+                foreach (int neighbourIndex in cellParticles)
                 {
-                    int neighbourIndex = compactHashing.spatialHashingInfo[(int)key][j];
                     if (particleIndex == neighbourIndex) continue;
 
-                    Vector2 centerToNeigbour = particle.position - _particles[neighbourIndex].position;
-                    float sqrDistFromCenterToNeighbour = Vector2.Dot(centerToNeigbour, centerToNeigbour);
-                    if (sqrDistFromCenterToNeighbour > radius2) continue;               
+                    Vector2 centerToNeighbour = particle.position - _particles[neighbourIndex].position;
+                    float sqrDistFromCenterToNeighbour = Vector2.Dot(centerToNeighbour, centerToNeighbour);
+                    if (sqrDistFromCenterToNeighbour > radius2) continue;
 
-                    Debug.Log($"ParticleIndex: {particleIndex} has this NeighbourIndex {neighbourIndex} in radius");
-
-                    //Compute Density of those
                     float dist = Mathf.Sqrt(sqrDistFromCenterToNeighbour);
-                    float nearinfluence = Tools.Ver_1_SmoothNearDensityKernel(smoothDensityRadius, dist);
                     float influence = Tools.Ver_2_SmoothDensityKernel(smoothDensityRadius, dist);
+                    float nearInfluence = Tools.Ver_1_SmoothNearDensityKernel(smoothDensityRadius, dist);
 
                     density += particle.mass * influence;
-                    nearDens += particle.mass * nearinfluence;
+                    nearDens += particle.mass * nearInfluence;
                 }
             }
         }
