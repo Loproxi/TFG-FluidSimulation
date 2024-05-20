@@ -14,6 +14,7 @@ public class FluidSimulation : MonoBehaviour
 
     private SP_Tile tile;
     private float deltaTime = 0.0f;
+    public Vector2[] velocities;
 
     [Header("SPH Related")]
     public float smoothDensityRadius = 1.0f;
@@ -58,6 +59,7 @@ public class FluidSimulation : MonoBehaviour
     void SpawnParticles()
     {
         _particles = new FluidParticle[_fluidInitializer.numParticles];
+        velocities = new Vector2[_fluidInitializer.numParticles];
 
         for (int i = 0; i < _fluidInitializer.numParticles; i++)
         {
@@ -205,6 +207,7 @@ public class FluidSimulation : MonoBehaviour
         }
 
         _particles[particleIndex].ModifyVelocity(pressureAcceleration * deltaTime);
+        velocities[particleIndex] = pressureAcceleration * deltaTime;
 
     }
 
@@ -222,6 +225,10 @@ public class FluidSimulation : MonoBehaviour
 
         Vector2 particleSize = Vector2.one * _fluidInitializer.particleScale;
 
+        _particles[particleIndex].UpdatePosition(new Vector2(
+           Mathf.Clamp(particlePosition.x, _fluidInitializer.minBounds.x + particleSize.x, _fluidInitializer.maxBounds.x - particleSize.x),
+           Mathf.Clamp(particlePosition.y, _fluidInitializer.minBounds.y + particleSize.y, _fluidInitializer.maxBounds.y - particleSize.y)));
+
         // Check collisions with the boundaries
         if (particlePosition.x < (_fluidInitializer.minBounds.x + particleSize.x) || particlePosition.x > (_fluidInitializer.maxBounds.x - particleSize.x))
         {
@@ -235,21 +242,19 @@ public class FluidSimulation : MonoBehaviour
 
 
         // Ensure the particle stays within bounds
-        _particles[particleIndex].UpdatePosition( new Vector2(
-           Mathf.Clamp(particlePosition.x, _fluidInitializer.minBounds.x + particleSize.x, _fluidInitializer.maxBounds.x - particleSize.x),
-           Mathf.Clamp(particlePosition.y, _fluidInitializer.minBounds.y + particleSize.y, _fluidInitializer.maxBounds.y - particleSize.y)));
+
         
     }
     void ApplyForces()
     {
         // Compute Acceleration -> velocity -> position -> resolve collisions with bounds
 
-        Vector2 gravity = new Vector2(0, -9.81f);
+        //Vector2 gravity = new Vector2(0, -9.81f);
 
         Parallel.For(0, _fluidInitializer.numParticles, particleId =>
         {
             ComputePressureForce(particleId);
-            _particles[particleId].ModifyVelocity(gravity);
+            //_particles[particleId].ModifyVelocity(gravity);
         });
 
         for (int i = 0; i < _fluidInitializer.numParticles; i++)

@@ -289,8 +289,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fluidParticle: {fileID: 1301275780}
+  velocities: []
   smoothDensityRadius: 2
-  restDensity: 0.31
+  restDensity: 1
   gasConstant: 2
   collisionDamping: 0.95
   timestep: 0.0001
@@ -322,10 +323,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   positions: []
-  numParticles: 68
+  numParticles: 10
   particleScale: 1
-  minBounds: {x: -29.99, y: -9.81}
-  maxBounds: {x: 60, y: 20}
+  minBounds: {x: 0, y: 0}
+  maxBounds: {x: 10, y: 10}
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
