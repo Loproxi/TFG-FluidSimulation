@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
+using static UnityEngine.ParticleSystem;
 
 public class CompactHashing
 {
@@ -8,17 +10,16 @@ public class CompactHashing
     private int NumParticles;
     private float width;
     private float height;
-    public Dictionary<int, List<int>> spatialHashingInfo;
+    public uint2[] spatialHashingInfo; // Vector x = particleIndex Vector Y = cellkey
+    public uint[] spatialHashingIndices;
 
     public CompactHashing(int numParticles, float width, float height)
     {
         NumParticles = numParticles;
         this.width = width;
         this.height = height;
-        spatialHashingInfo = new Dictionary<int, List<int>>
-        {
-            { 0, new List<int>() }
-        };
+        spatialHashingInfo = new uint2[numParticles];
+        spatialHashingIndices = new uint[numParticles];
     }
 
     #region GridPartitioning
@@ -79,27 +80,11 @@ public class CompactHashing
     }
     #endregion
 
-    public void ClearSpatialHashingLists()
+    public void ClearSpatialHashingLists(int particleId)
     {
-        List<int> keysToRemove = new List<int>();
 
-        foreach (var cellKeys in spatialHashingInfo.Keys)
-        {
-            if (spatialHashingInfo[cellKeys].Count == 0)
-            {
-                keysToRemove.Add(cellKeys);
-            }
-        }
+        spatialHashingIndices[particleId] = uint.MaxValue;
 
-        foreach (var key in keysToRemove)
-        {
-            spatialHashingInfo.Remove(key);
-        }
-
-        foreach (var particlesLists in spatialHashingInfo.Values)
-        {
-            particlesLists.Clear();
-        }
     }
 
 }

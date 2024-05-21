@@ -290,11 +290,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   fluidParticle: {fileID: 1301275780}
   velocities: []
-  smoothDensityRadius: 2
-  restDensity: 1
+  smoothDensityRadius: 0.3
+  restDensity: 0.09
   gasConstant: 2
   collisionDamping: 0.95
-  timestep: 0.0001
 --- !u!4 &629181854
 Transform:
   m_ObjectHideFlags: 0
@@ -323,10 +322,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   positions: []
-  numParticles: 10
-  particleScale: 1
+  numParticles: 3000
+  particleScale: 0.4
   minBounds: {x: 0, y: 0}
-  maxBounds: {x: 10, y: 10}
+  maxBounds: {x: 29.98, y: 29.66}
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -592,7 +591,7 @@ Transform:
   m_GameObject: {fileID: 1301275777}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 22.16, y: 6.9174466, z: -5.7217784}
-  m_LocalScale: {x: 0.6, y: 0.6, z: 0.6}
+  m_LocalScale: {x: 0.4, y: 0.4, z: 0.4}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}

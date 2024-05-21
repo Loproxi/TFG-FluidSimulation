@@ -1,9 +1,10 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
+using Unity.Mathematics;
 using static UnityEngine.ParticleSystem;
+using System.Reflection;
 
 public class FluidSimulation : MonoBehaviour
 {
@@ -21,7 +22,6 @@ public class FluidSimulation : MonoBehaviour
     public float restDensity = 1.0f;
     public float gasConstant = 2.0f;
     public float collisionDamping = 1.0f;
-    public float timestep = 0.0001f;
     private CompactHashing compactHashing;
 
     private void Start()
@@ -73,59 +73,87 @@ public class FluidSimulation : MonoBehaviour
 
     void UpdateSimulation()
     {
-        UnityEngine.Profiling.Profiler.BeginSample("Update Spatial Hashing");
-        //First -> Update GridPartitioning && Compute Density
-        Parallel.For(0, _fluidInitializer.numParticles, particleId =>
-        {
-            UpdateSpatialHashing(particleId);
-        });
 
-        UnityEngine.Profiling.Profiler.EndSample();
+        //First -> Update GridPartitioning && Compute Density       
+        UpdateSpatialHashing();
 
-        UnityEngine.Profiling.Profiler.BeginSample("Compute Density");
         Parallel.For(0, _fluidInitializer.numParticles, particleId =>
         {
             ComputeDensity(particleId);
         });
 
-        UnityEngine.Profiling.Profiler.EndSample();
         //Second Apply the forces (Pressure & Viscosity)
-        UnityEngine.Profiling.Profiler.BeginSample("Compute Pressure and Move Particles");
         ApplyForces();
-        UnityEngine.Profiling.Profiler.EndSample();
 
-        UnityEngine.Profiling.Profiler.BeginSample("CheckCollisions");
         for (int i = 0; i < _fluidInitializer.numParticles; i++)
         {
             CheckBoundaryCollisions(i);
         }
-        UnityEngine.Profiling.Profiler.EndSample();
-        compactHashing.ClearSpatialHashingLists();
-
-        
     }
 
-    private void UpdateSpatialHashing(int particleId)
+    private void UpdateSpatialHashing()
     {
+        Parallel.For(0, _fluidInitializer.numParticles, particleId =>
+        {
+
+            FillSpatialHashing(particleId);
+
+        });
+
+        SortSpatialHashing();
+
+        Parallel.For(0, _fluidInitializer.numParticles, it =>
+        {
+
+            FillSpatialIndices(it);
+
+        });
+    }
+
+    private void FillSpatialHashing(int particleId)
+    {
+        compactHashing.ClearSpatialHashingLists(particleId);
 
         Vector2 cell = compactHashing.GetCellFromPosition(_particles[particleId].position);
         uint key = compactHashing.GetKeyFromHashedCell(compactHashing.HashingCell(cell));
 
-        lock (compactHashing.spatialHashingInfo)
-        {
-            if (compactHashing.spatialHashingInfo.ContainsKey((int)key) == false)
-            {
-                compactHashing.spatialHashingInfo[(int)key] = new List<int>();
-            }
+        compactHashing.spatialHashingInfo[particleId] = new uint2((uint)particleId, key);
+    }
 
-            compactHashing.spatialHashingInfo[(int)key].Add(particleId);
+    private void FillSpatialIndices(int it)
+    {
+        int numParticles = _fluidInitializer.numParticles;
+        int nextIt = it + 1;
+        uint key = compactHashing.spatialHashingInfo[it].y;
+        uint nextKey = uint.MaxValue;
+        if(nextIt != numParticles)
+        {
+            nextKey = compactHashing.spatialHashingInfo[nextIt].y;
         }
+
+        if (key != nextKey || it == _fluidInitializer.numParticles - 1)
+        {
+            compactHashing.spatialHashingIndices[key] = (uint)it;
+        }
+
+    }
+
+    private void SortSpatialHashing()
+    {
+        //Delegate that points to the compare Y Coord function
+        Comparison<uint2> sortByY = CompareYCoord;
+
+        Array.Sort(compactHashing.spatialHashingInfo, sortByY);
+    }
+
+    private int CompareYCoord(uint2 a, uint2 b)
+    {
+        return a.y.CompareTo(b.y);
     }
 
     void ComputeDensity(int particleIndex)
     {
         FluidParticle particle = _particles[particleIndex];
-        Vector2 centerCell = compactHashing.GetCellFromPosition(particle.position);
         //Compute radius * radius to avoid computing square
         float radius2 = smoothDensityRadius * smoothDensityRadius;
         float density = 0.0f;
@@ -133,20 +161,21 @@ public class FluidSimulation : MonoBehaviour
 
         Vector2[] nearCells = compactHashing.SelectSurroundingCells(particle.position);
 
-        foreach (Vector2 nearCell in nearCells)
+        for (uint i = 0; i < nearCells.Length; i++)
         {
-            uint key = compactHashing.GetKeyFromHashedCell(compactHashing.HashingCell(nearCell));
+            uint key = compactHashing.GetKeyFromHashedCell(compactHashing.HashingCell(nearCells[i]));
+            uint index = compactHashing.spatialHashingIndices[key];
 
-            if (compactHashing.spatialHashingInfo.TryGetValue((int)key, out var cellParticles))
+            while(index < compactHashing.spatialHashingInfo.Length && compactHashing.spatialHashingInfo[index].y == key)
             {
-                foreach (int neighbourIndex in cellParticles)
+
+                uint neighbourIndex = compactHashing.spatialHashingInfo[index].x;
+
+                Vector2 centerToNeighbour = particle.position - _particles[neighbourIndex].position;
+                float sqrDistFromCenterToNeighbour = Vector2.Dot(centerToNeighbour, centerToNeighbour);
+
+                if (sqrDistFromCenterToNeighbour <= radius2)
                 {
-                    if (particleIndex == neighbourIndex) continue;
-
-                    Vector2 centerToNeighbour = particle.position - _particles[neighbourIndex].position;
-                    float sqrDistFromCenterToNeighbour = Vector2.Dot(centerToNeighbour, centerToNeighbour);
-                    if (sqrDistFromCenterToNeighbour > radius2) continue;
-
                     float dist = Mathf.Sqrt(sqrDistFromCenterToNeighbour);
                     float influence = Tools.Ver_2_SmoothDensityKernel(smoothDensityRadius, dist);
                     float nearInfluence = Tools.Ver_1_SmoothNearDensityKernel(smoothDensityRadius, dist);
@@ -154,6 +183,8 @@ public class FluidSimulation : MonoBehaviour
                     density += particle.mass * influence;
                     nearDens += particle.mass * nearInfluence;
                 }
+
+                index++;
             }
         }
         _particles[particleIndex].UpdateDensity(density);
@@ -169,37 +200,43 @@ public class FluidSimulation : MonoBehaviour
 
         Vector2[] nearCells = compactHashing.SelectSurroundingCells(particle.position);
 
-        for (int i = 1; i < nearCells.Length; i++)
+        for (uint i = 0; i < nearCells.Length; i++)
         {
             uint key = compactHashing.GetKeyFromHashedCell(compactHashing.HashingCell(nearCells[i]));
+            uint index = compactHashing.spatialHashingIndices[key];
 
-            //TODO: Sometimes if the nearCell Coords are negative the key is negative also and that produces that cellData doesnt work because there are no negative index
-            if (compactHashing.spatialHashingInfo.ContainsKey((int)key))
+            while (index < compactHashing.spatialHashingInfo.Length && compactHashing.spatialHashingInfo[index].y == key)
             {
 
-                for (int j = 0; j < compactHashing.spatialHashingInfo[(int)key].Count; j++)
+                uint neighbourIndex = compactHashing.spatialHashingInfo[index].x;
+
+                if (particleIndex == neighbourIndex)
                 {
-                    int neighbourIndex = compactHashing.spatialHashingInfo[(int)key][j];
-                    if (particleIndex == neighbourIndex) continue;
-
-                    Vector2 particleToOther = (_particles[neighbourIndex].position - particle.position);
-                    float sqrDistFromCenterToNeighbour = Vector2.Dot(particleToOther,particleToOther);
-                    if (sqrDistFromCenterToNeighbour > radius2) continue;
-
+                    index++;
+                    continue;
+                }
+                Vector2 particleToOther = (_particles[neighbourIndex].position - particle.position);
+                float sqrDistFromCenterToNeighbour = Vector2.Dot(particleToOther,particleToOther);
+                if (sqrDistFromCenterToNeighbour <= radius2)
+                {
                     //Compute Density of those
                     float dist = Mathf.Sqrt(sqrDistFromCenterToNeighbour);
-                    Vector2 dir = dist > 0 ? particleToOther/dist : Vector2.up;
+                    Vector2 dir = dist > 0 ? particleToOther / dist : Vector2.up;
                     float slope = Tools.Derivative_Ver_2_SmoothDensityKernel(smoothDensityRadius, dist);
                     float nearSlope = Tools.Derivative_Ver_3_SmoothNearDensityKernel(smoothDensityRadius, dist);
                     float pressureBetweenParticles = (ConvertDensityIntoPressure(_particles[particleIndex].density) + ConvertDensityIntoPressure(_particles[neighbourIndex].density)) * 0.5f;
                     float nearPressureBetweenParticles = (ConvertDensityIntoPressure(_particles[particleIndex].nearDensity) + ConvertDensityIntoPressure(_particles[neighbourIndex].nearDensity)) * 0.5f;
 
-
-                    if (_particles[neighbourIndex].density < float.Epsilon) continue;
-
+                    if (_particles[neighbourIndex].density < float.Epsilon)
+                    {
+                        index++;
+                        continue;
+                    }
                     pressure += dir * slope * pressureBetweenParticles / _particles[neighbourIndex].density;
                     pressure += dir * nearSlope * nearPressureBetweenParticles / _particles[neighbourIndex].nearDensity;
                 }
+
+                index++;
             }
         }
 
@@ -222,8 +259,7 @@ public class FluidSimulation : MonoBehaviour
     }
 
     private void CheckBoundaryCollisions(int particleIndex)
-    {
-        
+    {      
         Vector2 particlePosition = _particles[particleIndex].position;
         Vector2 particleVelocity = _particles[particleIndex].velocity;
 
@@ -242,13 +278,9 @@ public class FluidSimulation : MonoBehaviour
         if (particlePosition.y < (_fluidInitializer.minBounds.y + particleSize.y) || particlePosition.y > (_fluidInitializer.maxBounds.y - particleSize.y))
         {
             _particles[particleIndex].UpdateVelocity(particleVelocity.x, particleVelocity.y * -1 * collisionDamping); // Invert Y velocity
-        }
-
-
-        // Ensure the particle stays within bounds
-
-        
+        }        
     }
+
     void ApplyForces()
     {
         // Compute Acceleration -> velocity -> position -> resolve collisions with bounds
