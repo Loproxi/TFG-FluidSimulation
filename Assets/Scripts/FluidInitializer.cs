@@ -17,12 +17,39 @@ public class FluidInitializer : MonoBehaviour
     {
         positions = new Vector2[numParticles];
 
-        for (int i = 0; i < numParticles; i++)
+        GetPositionInBounds();
+    }
+    void GetPositionInBounds()
+    {
+
+        int numRows = Mathf.CeilToInt(Mathf.Sqrt(numParticles));
+        int numCols = Mathf.CeilToInt((float)numParticles / numRows);
+
+        // Calcular el espacio entre partículas
+        float xSpacing = particleScale;
+        float ySpacing = particleScale;
+
+        Vector2 spawnCenter = new Vector2((minBounds.x + maxBounds.x) / 2, (minBounds.y + maxBounds.y) / 2);
+
+        int particleIndex = 0;
+        // Generar las posiciones y spawnear las partículas
+        for (int row = 0; row < numRows; row++)
         {
-            positions[i] = GetRandomPosition();
+            for (int col = 0; col < numCols; col++)
+            {
+                if (particleIndex >= numParticles) return; // Si hemos calculado todas las posiciones, salir
+
+                // Calcular la posición de la partícula con respecto al centro
+                float xPos = spawnCenter.x + (col - numCols / 2) * xSpacing;
+                float yPos = spawnCenter.y + (row - numRows / 2) * ySpacing;
+                Vector2 spawnPosition = new Vector2(xPos, yPos);
+
+                positions[particleIndex] = spawnPosition;
+                particleIndex++;
+
+            }
         }
     }
-
     Vector2 GetRandomPosition()
     {
         float particleRadius = particleScale/2;

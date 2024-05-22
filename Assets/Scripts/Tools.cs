@@ -15,6 +15,18 @@ public class Tools
         return 0.0f;
     }
 
+    public static float Derivative_Ver_1_SmoothNearDensityKernel(float radius, float dist)
+    {
+        if (dist <= radius)
+        {
+
+            float volume = 30 / (Mathf.Pow(radius, 5) * Mathf.PI);
+            return -(radius - dist) * (radius - dist) * volume;
+
+        }
+        return 0;
+    }
+
     public static float Ver_2_SmoothDensityKernel(float radius, float dist)
     {
         if (dist < radius)
@@ -46,18 +58,6 @@ public class Tools
         float smoothvalue = Mathf.Max(0, radius * radius - dist * dist);
 
         return smoothvalue * smoothvalue * smoothvalue / volume;
-    }
-
-    public static float Derivative_Ver_3_SmoothNearDensityKernel(float radius, float dist)
-    {
-        if (dist <= radius)
-        {
-
-            float volume = 30 / (Mathf.Pow(radius, 5) * Mathf.PI);
-            return -(radius - dist) * (radius - dist) * volume;
-
-        }
-        return 0;
     }
 
 }

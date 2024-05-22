@@ -6,6 +6,7 @@ public class FluidParticle : MonoBehaviour
 {
 
     public Vector2 position { get; private set; }
+    public Vector2 nextPosition { get; private set; }
     public Vector2 velocity { get; private set; }
     public float mass { get; private set; }
     public float density { get; private set; }
@@ -23,6 +24,11 @@ public class FluidParticle : MonoBehaviour
     {
         position = newPos;
         gameObject.transform.position = newPos;
+    }
+
+    public void UpdateNextPosition(Vector2 newNextPos)
+    {
+        nextPosition = newNextPos;
     }
 
     public void ModifyVelocity(Vector2 newVel)
