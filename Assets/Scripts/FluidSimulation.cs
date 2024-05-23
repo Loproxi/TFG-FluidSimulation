@@ -99,17 +99,18 @@ public class FluidSimulation : MonoBehaviour
     {
         predictiondeltaTime = 1 / 120.0f;
 
-        Parallel.For(0, _fluidInitializer.numParticles, particleId =>
+
+        for (int i = 0; i < _particles.Length; i++)
         {
 
-            _particles[particleId].ModifyVelocity(new Vector2(0,gravity));
+            _particles[i].ModifyVelocity(new Vector2(0, gravity));
 
-            Vector2 pos = _particles[particleId].position;
-            Vector2 vel = _particles[particleId].velocity * deltaTime;
+            Vector2 pos = _particles[i].position;
+            Vector2 vel = _particles[i].velocity * deltaTime;
 
-            _particles[particleId].UpdateNextPosition(pos + vel * predictiondeltaTime);
+            _particles[i].UpdateNextPosition(pos + vel * predictiondeltaTime);
 
-        });
+        }
     }
 
 #region SpatialHashing
@@ -130,6 +131,7 @@ public class FluidSimulation : MonoBehaviour
             FillSpatialIndices(it);
 
         });
+
     }
 
     private void FillSpatialHashing(int particleId)
@@ -145,15 +147,15 @@ public class FluidSimulation : MonoBehaviour
     private void FillSpatialIndices(int it)
     {
         int numParticles = _fluidInitializer.numParticles;
-        int nextIt = it + 1;
         uint key = compactHashing.spatialHashingInfo[it].y;
-        uint nextKey = uint.MaxValue;
-        if(nextIt != numParticles)
+        uint beforeKey = uint.MaxValue;
+
+        if ((it-1) >= 0)
         {
-            nextKey = compactHashing.spatialHashingInfo[nextIt].y;
+            beforeKey = compactHashing.spatialHashingInfo[it - 1].y;
         }
 
-        if (key != nextKey || it == _fluidInitializer.numParticles - 1)
+        if (key != beforeKey || it == 0)
         {
             compactHashing.spatialHashingIndices[key] = (uint)it;
         }
@@ -194,6 +196,12 @@ public class FluidSimulation : MonoBehaviour
             {
 
                 uint neighbourIndex = compactHashing.spatialHashingInfo[index].x;
+
+                if (particleIndex == neighbourIndex)
+                {
+                    index++;
+                    continue;
+                }
 
                 Vector2 centerToNeighbour = _particles[neighbourIndex].nextPosition - particle.nextPosition;
                 float sqrDistFromCenterToNeighbour = Vector2.Dot(centerToNeighbour, centerToNeighbour);

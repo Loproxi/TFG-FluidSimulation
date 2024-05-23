@@ -292,7 +292,7 @@ MonoBehaviour:
   velocities: []
   smoothDensityRadius: 0.4
   restDensity: 3
-  gasConstant: 0.001
+  gasConstant: 1
   collisionDamping: 0.75
   gravity: 0
 --- !u!4 &629181854
