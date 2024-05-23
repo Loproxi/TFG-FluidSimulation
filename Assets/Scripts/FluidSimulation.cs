@@ -100,17 +100,17 @@ public class FluidSimulation : MonoBehaviour
         predictiondeltaTime = 1 / 120.0f;
 
 
-        for (int i = 0; i < _particles.Length; i++)
+        Parallel.For(0, _fluidInitializer.numParticles, particleId =>
         {
 
-            _particles[i].ModifyVelocity(new Vector2(0, gravity));
+            _particles[particleId].ModifyVelocity(new Vector2(0, gravity));
 
-            Vector2 pos = _particles[i].position;
-            Vector2 vel = _particles[i].velocity * deltaTime;
+            Vector2 pos = _particles[particleId].position;
+            Vector2 vel = _particles[particleId].velocity * deltaTime;
 
-            _particles[i].UpdateNextPosition(pos + vel * predictiondeltaTime);
+            _particles[particleId].UpdateNextPosition(pos + vel * predictiondeltaTime);
 
-        }
+        });
     }
 
 #region SpatialHashing
