@@ -97,7 +97,7 @@ public class FluidSimulation : MonoBehaviour
 
     private void UpdateNextPositions()
     {
-        predictiondeltaTime = 1 / 60.0f;
+        predictiondeltaTime = 1 / 120.0f;
 
         Parallel.For(0, _fluidInitializer.numParticles, particleId =>
         {
@@ -254,11 +254,6 @@ public class FluidSimulation : MonoBehaviour
                     float pressureBetweenParticles = (ConvertDensityIntoPressure(_particles[particleIndex].density) + ConvertDensityIntoPressure(_particles[neighbourIndex].density)) * 0.5f;
                     float nearPressureBetweenParticles = (_particles[particleIndex].nearDensity + _particles[neighbourIndex].nearDensity) * 0.5f;
 
-                    if (_particles[neighbourIndex].density < 0.00001f)
-                    {
-                        index++;
-                        continue;
-                    }
                     pressure += dir * slope * pressureBetweenParticles / _particles[neighbourIndex].density;
                     //pressure += dir * nearSlope * nearPressureBetweenParticles / _particles[neighbourIndex].nearDensity;
                 }
@@ -279,8 +274,8 @@ public class FluidSimulation : MonoBehaviour
     float ConvertDensityIntoPressure(float density)
     {
         //If the rest density is achieved particle won't generate pressure
-        float pressure = gasConstant * (density - restDensity);
-        return pressure;
+        float pressure = (density - restDensity) * gasConstant;
+        return Mathf.Max(pressure, 0);
     }
 
     private void CheckBoundaryCollisions(int particleIndex)

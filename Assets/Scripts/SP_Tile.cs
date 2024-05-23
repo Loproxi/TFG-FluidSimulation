@@ -12,8 +12,8 @@ public enum STATES
 public class SP_Tile 
 {
     public Vector2 position { get; private set; }
-    public float width = 0.8f;
-    public float height = 0.8f;
+    public float width = 0.4f;
+    public float height = 0.4f;
     public STATES state { get; private set;}
 
     public void UpdatePosition(Vector2 position)
