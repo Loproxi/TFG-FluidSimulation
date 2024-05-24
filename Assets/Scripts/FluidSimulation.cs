@@ -19,12 +19,14 @@ public class FluidSimulation : MonoBehaviour
     public Vector2[] velocities;
 
     [Header("SPH Related")]
+    [Range(0.0f, 1.0f)]
     public float smoothDensityRadius = 1.0f;
     public float restDensity = 1.0f;
     public float gasConstant = 2.0f;
     [Range(0.0f, 1.0f)]
     public float collisionDamping = 1.0f;
     public float gravity = -9.81f;
+    public float viscosity = 0.0f;
     private CompactHashing compactHashing;
 
     private void Start()
@@ -35,6 +37,30 @@ public class FluidSimulation : MonoBehaviour
     private void FixedUpdate()
     {
         UpdateSimulation();
+
+        for (int i = 0; i < _particles.Length; i++)
+        {
+            
+            SpriteRenderer sprite = _particles[i].GetComponent<SpriteRenderer>();
+
+            if (Mathf.Abs(_particles[i].velocity.x) <= 0.0f && Mathf.Abs(_particles[i].velocity.y) <= 0.0f)
+            {
+                sprite.color = Color.blue;
+            }
+            else if(Mathf.Abs(_particles[i].velocity.x) <= 2.0f || Mathf.Abs(_particles[i].velocity.y) <= 1.0f)
+            {
+                sprite.color = Color.green;
+            }
+            else if (Mathf.Abs(_particles[i].velocity.x) <= 5.0f || Mathf.Abs(_particles[i].velocity.y) <= 2.0f)
+            {
+                sprite.color = Color.yellow;
+            }
+            else
+            {
+                sprite.color = Color.red;
+            }
+
+        }
     }
 
     #region InitSimulation
@@ -103,10 +129,10 @@ public class FluidSimulation : MonoBehaviour
         Parallel.For(0, _fluidInitializer.numParticles, particleId =>
         {
 
-            _particles[particleId].ModifyVelocity(new Vector2(0, gravity));
+            _particles[particleId].ModifyVelocity(new Vector2(0, gravity * deltaTime));
 
             Vector2 pos = _particles[particleId].position;
-            Vector2 vel = _particles[particleId].velocity * deltaTime;
+            Vector2 vel = _particles[particleId].velocity;
 
             _particles[particleId].UpdateNextPosition(pos + vel * predictiondeltaTime);
 
@@ -197,12 +223,6 @@ public class FluidSimulation : MonoBehaviour
 
                 uint neighbourIndex = compactHashing.spatialHashingInfo[index].x;
 
-                if (particleIndex == neighbourIndex)
-                {
-                    index++;
-                    continue;
-                }
-
                 Vector2 centerToNeighbour = _particles[neighbourIndex].nextPosition - particle.nextPosition;
                 float sqrDistFromCenterToNeighbour = Vector2.Dot(centerToNeighbour, centerToNeighbour);
 
@@ -220,8 +240,8 @@ public class FluidSimulation : MonoBehaviour
                 index++;
             }
         }
-        density = Mathf.Max(density, 0.01f);
-        nearDens = Mathf.Max(nearDens, 0.01f);
+        density = Mathf.Max(density, 0.0001f);
+        nearDens = Mathf.Max(nearDens, 0.0001f);
         _particles[particleIndex].UpdateDensity(density);
         _particles[particleIndex].UpdateNearDensity(nearDens);
     }
@@ -262,7 +282,7 @@ public class FluidSimulation : MonoBehaviour
                     float pressureBetweenParticles = (ConvertDensityIntoPressure(_particles[particleIndex].density) + ConvertDensityIntoPressure(_particles[neighbourIndex].density)) * 0.5f;
                     float nearPressureBetweenParticles = (_particles[particleIndex].nearDensity + _particles[neighbourIndex].nearDensity) * 0.5f;
 
-                    pressure += dir * slope * pressureBetweenParticles / _particles[neighbourIndex].density;
+                    pressure += particle.mass * dir * slope * pressureBetweenParticles / _particles[neighbourIndex].density;
                     //pressure += dir * nearSlope * nearPressureBetweenParticles / _particles[neighbourIndex].nearDensity;
                 }
 
@@ -278,12 +298,53 @@ public class FluidSimulation : MonoBehaviour
         velocities[particleIndex] = pressureAcceleration * deltaTime;
 
     }
-
     float ConvertDensityIntoPressure(float density)
     {
         //If the rest density is achieved particle won't generate pressure
         float pressure = (density - restDensity) * gasConstant;
-        return Mathf.Max(pressure, 0);
+        return pressure;
+    }
+    void ComputeViscosityForce(int particleIndex)
+    {
+        FluidParticle particle = _particles[particleIndex];
+        //Compute radius * radius to avoid computing square
+        float radius2 = smoothDensityRadius * smoothDensityRadius;
+        Vector2 _viscosity = Vector2.zero;
+
+        Vector2[] nearCells = compactHashing.SelectSurroundingCells(particle.nextPosition);
+
+        for (uint i = 0; i < nearCells.Length; i++)
+        {
+            uint key = compactHashing.GetKeyFromHashedCell(compactHashing.HashingCell(nearCells[i]));
+            uint index = compactHashing.spatialHashingIndices[key];
+
+            while (index < compactHashing.spatialHashingInfo.Length && compactHashing.spatialHashingInfo[index].y == key)
+            {
+
+                uint neighbourIndex = compactHashing.spatialHashingInfo[index].x;
+
+                if (particleIndex == neighbourIndex)
+                {
+                    index++;
+                    continue;
+                }
+                Vector2 particleToOther = (_particles[neighbourIndex].nextPosition - particle.nextPosition);
+                float sqrDistFromCenterToNeighbour = Vector2.Dot(particleToOther, particleToOther);
+                if (sqrDistFromCenterToNeighbour <= radius2)
+                {
+                    //Compute Viscosity of those
+                    float dist = Mathf.Sqrt(sqrDistFromCenterToNeighbour);
+                    float viscInfluence = Tools.Ver_3_SmoothDensityKernel(smoothDensityRadius, dist);
+
+                    _viscosity = particle.mass * (_particles[neighbourIndex].velocity - particle.velocity) / _particles[neighbourIndex].density;
+                    _viscosity *= viscInfluence;
+                }
+                index++;
+            }
+        }
+
+        _particles[particleIndex].ModifyVelocity(_viscosity * viscosity * deltaTime);
+
     }
 
     private void CheckBoundaryCollisions(int particleIndex)
@@ -316,6 +377,8 @@ public class FluidSimulation : MonoBehaviour
         Parallel.For(0, _fluidInitializer.numParticles, particleId =>
         {
             ComputePressureForce(particleId);
+
+            ComputeViscosityForce(particleId);
         });
 
         for (int i = 0; i < _fluidInitializer.numParticles; i++)
@@ -326,7 +389,7 @@ public class FluidSimulation : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        if(Application.isPlaying)
+        if (Application.isPlaying)
         {
             foreach (var particle in _particles)
             {
