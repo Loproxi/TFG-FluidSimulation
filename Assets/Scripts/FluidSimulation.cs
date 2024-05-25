@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using Unity.Mathematics;
 using static UnityEngine.ParticleSystem;
-using System.Reflection;
+
 
 public class FluidSimulation : MonoBehaviour
 {
@@ -17,6 +17,8 @@ public class FluidSimulation : MonoBehaviour
     private float deltaTime = 0.0f;
     private float predictiondeltaTime = 0.0f;
     public Vector2[] velocities;
+
+    public GameObject sphere;
 
     [Header("SPH Related")]
     [Range(0.0f, 1.0f)]
@@ -115,9 +117,13 @@ public class FluidSimulation : MonoBehaviour
         //Second Apply the forces (Pressure & Viscosity)
         ApplyForces();
 
+        
+
         for (int i = 0; i < _fluidInitializer.numParticles; i++)
         {
+            CheckOtherCollisions(i);
             CheckBoundaryCollisions(i);
+
         }
     }
 
@@ -278,9 +284,9 @@ public class FluidSimulation : MonoBehaviour
                     float dist = Mathf.Sqrt(sqrDistFromCenterToNeighbour);
                     Vector2 dir = dist > 0 ? particleToOther / dist : Vector2.up;
                     float slope = Tools.Derivative_Ver_2_SmoothDensityKernel(smoothDensityRadius, dist);
-                    float nearSlope = Tools.Derivative_Ver_1_SmoothNearDensityKernel(smoothDensityRadius, dist);
+                    //float nearSlope = Tools.Derivative_Ver_1_SmoothNearDensityKernel(smoothDensityRadius, dist);
                     float pressureBetweenParticles = (ConvertDensityIntoPressure(_particles[particleIndex].density) + ConvertDensityIntoPressure(_particles[neighbourIndex].density)) * 0.5f;
-                    float nearPressureBetweenParticles = (_particles[particleIndex].nearDensity + _particles[neighbourIndex].nearDensity) * 0.5f;
+                    //float nearPressureBetweenParticles = (_particles[particleIndex].nearDensity + _particles[neighbourIndex].nearDensity) * 0.5f;
 
                     pressure += particle.mass * dir * slope * pressureBetweenParticles / _particles[neighbourIndex].density;
                     //pressure += dir * nearSlope * nearPressureBetweenParticles / _particles[neighbourIndex].nearDensity;
@@ -368,6 +374,38 @@ public class FluidSimulation : MonoBehaviour
         {
             _particles[particleIndex].UpdateVelocity(particleVelocity.x, particleVelocity.y * -1 * collisionDamping); // Invert Y velocity
         }        
+    }
+
+    void CheckOtherCollisions(int particleIndex)
+    {
+        float radius = sphere.transform.localScale.x / 2;
+        Vector2 spherePos = sphere.transform.position;
+        Vector2 particlePosition = _particles[particleIndex].position;
+        Vector2 particleVelocity = _particles[particleIndex].velocity;
+
+        Vector2 dir = particlePosition - spherePos;
+        float distance = dir.magnitude;
+
+        if (distance < radius)
+        {
+            dir.Normalize();
+
+            Vector2 newPosition = spherePos + dir * (radius + _fluidInitializer.particleScale / 2);
+
+            Vector2 newVelocity = particleVelocity - 2 * Vector2.Dot(particleVelocity, dir) * dir * collisionDamping;
+
+            _particles[particleIndex].UpdatePosition(newPosition);
+            _particles[particleIndex].UpdateVelocity(newVelocity.x, newVelocity.y);
+        }
+        else if(distance < radius + _fluidInitializer.particleScale / 2)
+        {
+            dir.Normalize();
+            Vector2 newPosition = spherePos + dir * (radius + _fluidInitializer.particleScale / 2);
+            Vector2 newVelocity = particleVelocity - 2 * Vector2.Dot(particleVelocity, dir) * dir * collisionDamping;
+
+            _particles[particleIndex].UpdatePosition(newPosition);
+            _particles[particleIndex].UpdateVelocity(newVelocity.x, newVelocity.y);
+        }
     }
 
     void ApplyForces()
