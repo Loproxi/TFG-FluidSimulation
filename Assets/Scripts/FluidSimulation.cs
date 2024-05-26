@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using Unity.Mathematics;
 using static UnityEngine.ParticleSystem;
+using System.Collections.Generic;
 
 
 public class FluidSimulation : MonoBehaviour
@@ -18,7 +19,8 @@ public class FluidSimulation : MonoBehaviour
     private float predictiondeltaTime = 0.0f;
     public Vector2[] velocities;
 
-    public GameObject sphere;
+    //public GameObject sphere;
+    private FluidCollider[] colliders; 
 
     [Header("SPH Related")]
     [Range(0.0f, 1.0f)]
@@ -81,6 +83,7 @@ public class FluidSimulation : MonoBehaviour
             tile = new SP_Tile();
             compactHashing = new CompactHashing(_fluidInitializer.numParticles, tile.width, tile.height);
 
+            colliders = FindObjectsByType<FluidCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         }
         else
         {
@@ -105,6 +108,7 @@ public class FluidSimulation : MonoBehaviour
 
     void UpdateSimulation()
     {
+
         UpdateNextPositions();
         //First -> Update GridPartitioning && Compute Density       
         UpdateSpatialHashing();
@@ -113,15 +117,19 @@ public class FluidSimulation : MonoBehaviour
         {
             ComputeDensity(particleId);
         });
+        List<FluidCircle> allCircles = new List<FluidCircle>();
+
+        foreach (var item in colliders)
+        {
+            allCircles.AddRange(item.CreateCirclesFromSprite(item.gameObject, 2,item._type));
+        }
 
         //Second Apply the forces (Pressure & Viscosity)
         ApplyForces();
 
-        
-
         for (int i = 0; i < _fluidInitializer.numParticles; i++)
         {
-            CheckOtherCollisions(i);
+            CheckOtherCollisions(i,allCircles);
             CheckBoundaryCollisions(i);
 
         }
@@ -352,7 +360,6 @@ public class FluidSimulation : MonoBehaviour
         _particles[particleIndex].ModifyVelocity(_viscosity * viscosity * deltaTime);
 
     }
-
     private void CheckBoundaryCollisions(int particleIndex)
     {      
         Vector2 particlePosition = _particles[particleIndex].position;
@@ -376,37 +383,73 @@ public class FluidSimulation : MonoBehaviour
         }        
     }
 
-    void CheckOtherCollisions(int particleIndex)
+    void CheckOtherCollisions(int particleIndex, List<FluidCircle> circles)
     {
-        float radius = sphere.transform.localScale.x / 2;
-        Vector2 spherePos = sphere.transform.position;
+
         Vector2 particlePosition = _particles[particleIndex].position;
         Vector2 particleVelocity = _particles[particleIndex].velocity;
 
-        Vector2 dir = particlePosition - spherePos;
-        float distance = dir.magnitude;
-
-        if (distance < radius)
+        for (int i = 0; i < circles.Count; i++)
         {
-            dir.Normalize();
+            float radius = circles[i].radius;
+            Vector2 spherePos = circles[i].center;
+            Vector2 dir = particlePosition - spherePos;
+            float distance = dir.magnitude;
 
-            Vector2 newPosition = spherePos + dir * (radius + _fluidInitializer.particleScale / 2);
+            if (distance < radius)
+            {
+                dir.Normalize();
 
-            Vector2 newVelocity = particleVelocity - 2 * Vector2.Dot(particleVelocity, dir) * dir * collisionDamping;
+                Vector2 newPosition = spherePos + dir * (radius + _fluidInitializer.particleScale / 2);
 
-            _particles[particleIndex].UpdatePosition(newPosition);
-            _particles[particleIndex].UpdateVelocity(newVelocity.x, newVelocity.y);
-        }
-        else if(distance < radius + _fluidInitializer.particleScale / 2)
-        {
-            dir.Normalize();
-            Vector2 newPosition = spherePos + dir * (radius + _fluidInitializer.particleScale / 2);
-            Vector2 newVelocity = particleVelocity - 2 * Vector2.Dot(particleVelocity, dir) * dir * collisionDamping;
+                Vector2 newVelocity = particleVelocity - 2 * Vector2.Dot(particleVelocity, dir) * dir * collisionDamping;
 
-            _particles[particleIndex].UpdatePosition(newPosition);
-            _particles[particleIndex].UpdateVelocity(newVelocity.x, newVelocity.y);
+                _particles[particleIndex].UpdatePosition(newPosition);
+                _particles[particleIndex].UpdateVelocity(newVelocity.x, newVelocity.y);
+            }
+            else if (distance < radius + _fluidInitializer.particleScale / 2)
+            {
+                dir.Normalize();
+                Vector2 newPosition = spherePos + dir * (radius + _fluidInitializer.particleScale / 2);
+                Vector2 newVelocity = particleVelocity - 2 * Vector2.Dot(particleVelocity, dir) * dir * collisionDamping;
+
+                _particles[particleIndex].UpdatePosition(newPosition);
+                _particles[particleIndex].UpdateVelocity(newVelocity.x, newVelocity.y);
+            }
         }
     }
+
+    //void CheckOtherCollisions(int particleIndex,FluidCollider[] circles)
+    //{
+    //    float radius = sphere.transform.localScale.x / 2;
+    //    Vector2 spherePos = sphere.transform.position;
+    //    Vector2 particlePosition = _particles[particleIndex].position;
+    //    Vector2 particleVelocity = _particles[particleIndex].velocity;
+
+    //    Vector2 dir = particlePosition - spherePos;
+    //    float distance = dir.magnitude;
+
+    //    if (distance < radius)
+    //    {
+    //        dir.Normalize();
+
+    //        Vector2 newPosition = spherePos + dir * (radius + _fluidInitializer.particleScale / 2);
+
+    //        Vector2 newVelocity = particleVelocity - 2 * Vector2.Dot(particleVelocity, dir) * dir * collisionDamping;
+
+    //        _particles[particleIndex].UpdatePosition(newPosition);
+    //        _particles[particleIndex].UpdateVelocity(newVelocity.x, newVelocity.y);
+    //    }
+    //    else if(distance < radius + _fluidInitializer.particleScale / 2)
+    //    {
+    //        dir.Normalize();
+    //        Vector2 newPosition = spherePos + dir * (radius + _fluidInitializer.particleScale / 2);
+    //        Vector2 newVelocity = particleVelocity - 2 * Vector2.Dot(particleVelocity, dir) * dir * collisionDamping;
+
+    //        _particles[particleIndex].UpdatePosition(newPosition);
+    //        _particles[particleIndex].UpdateVelocity(newVelocity.x, newVelocity.y);
+    //    }
+    //}
 
     void ApplyForces()
     {
