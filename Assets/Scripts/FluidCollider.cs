@@ -10,9 +10,9 @@ public struct FluidCircle
 {
     public float radius;
     public Vector2 center;
-    public TYPE_OF_COLLIDER type;
+    public ColliderType type;
 
-    public FluidCircle(Vector2 center,float radius,TYPE_OF_COLLIDER type)
+    public FluidCircle(Vector2 center,float radius,ColliderType type)
     {
         this.radius = radius;
         this.center = center;
@@ -20,22 +20,36 @@ public struct FluidCircle
     }
 
 }
-public enum TYPE_OF_COLLIDER
-{
-    CIRCLE,
-    QUAD,
-    MAX
-}
-public class FluidCollider : MonoBehaviour
+
+public class FluidCollider : MonoBehaviour,IFluidCollider
 {
 
-    public TYPE_OF_COLLIDER _type;
+    public ColliderType Type => ColliderType.OTHER;
+    public int gridResolution = 1;
 
-    public List<FluidCircle> CreateCirclesFromSprite(GameObject mesh, int gridResolution,TYPE_OF_COLLIDER type)
+    public void ResolveCollision(ref FluidParticle particle, float particleRadius, float collisionDamping)
+    {
+        Vector2 particlePosition = particle.position;
+        Vector2 particleVelocity = particle.velocity;
+
+        List<FluidCircle> list = new List<FluidCircle>();
+
+        list = CreateCirclesFromSprite(gridResolution);
+
+        foreach (var circle in list)
+        {
+            
+            //Check each circle in the complex mesh
+
+        }
+    }
+
+
+    public List<FluidCircle> CreateCirclesFromSprite(int gridResolution)
     {
 
         List<FluidCircle> circles = new List<FluidCircle>();
-        SpriteRenderer sprite = mesh.GetComponent<SpriteRenderer>();
+        SpriteRenderer sprite = gameObject.GetComponent<SpriteRenderer>();
 
         if (sprite == null)
         {
@@ -47,43 +61,7 @@ public class FluidCollider : MonoBehaviour
         Vector2 min = bounds.min;
         Vector2 max = bounds.max;
 
-        float cellWidth = (max.x - min.x) / gridResolution;
-        float cellHeight = (max.y - min.y) / gridResolution;
-
-        switch (type)
-        {
-            case TYPE_OF_COLLIDER.CIRCLE:
-                // Create circles based on the grid resolution
-                
-                float cellRadius = Mathf.Max(cellWidth, cellHeight) / 2;
-
-                circles.Add(new FluidCircle(mesh.transform.position, mesh.transform.localScale.x/2, type));  
-                
-                break;
-            case TYPE_OF_COLLIDER.QUAD:
-                for (int i = 0; i < gridResolution; i++)
-                {
-                    for (int j = 0; j < gridResolution; j++)
-                    {
-                        float cellMinX = min.x + i * cellWidth;
-                        float cellMaxX = cellMinX + cellWidth;
-                        float cellMinY = min.y + j * cellHeight;
-                        float cellMaxY = cellMinY + cellHeight;
-
-                        Vector2 cellCenter = new Vector2((cellMinX + cellMaxX) / 2, (cellMinY + cellMaxY) / 2);
-                        float cellRad = Mathf.Max(cellWidth, cellHeight) / 2;
-
-                        circles.Add(new FluidCircle(cellCenter, cellRad, type));
-                    }
-                }
-                break;
-            default:
-                Debug.LogError("Unsupported collider type.");
-                break;
-        }
 
         return circles;
-
     }
-
 }
