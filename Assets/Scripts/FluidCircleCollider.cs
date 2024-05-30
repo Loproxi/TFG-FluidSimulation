@@ -1,6 +1,7 @@
 using Unity.VisualScripting;
 using UnityEngine;
 
+
 public class FluidCircleCollider : MonoBehaviour, IFluidCollider
 {
     public Vector2 center { get; private set; }
@@ -9,6 +10,15 @@ public class FluidCircleCollider : MonoBehaviour, IFluidCollider
     public FluidCircleCollider(Vector2 center, float radius)
     {
         this.center = center;
+        this.radius = radius;
+    }
+    public void UpdateCenter(Vector2 newCenter)
+    {
+        center = newCenter;
+    }
+
+    public void UpdateRadius(float radius)
+    {
         this.radius = radius;
     }
 
