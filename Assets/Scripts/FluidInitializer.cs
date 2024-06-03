@@ -7,7 +7,7 @@ public class FluidInitializer : MonoBehaviour
     [Header("Particle Init Settings")]
     public Vector2[] positions;
     public int numParticles = 100;
-    public float particleScale = 1.0f;
+    public float particleScale = 0.5f;
 
     [Header("Domain Bounds")]
     public Vector2 minBounds = new Vector2(0,0);

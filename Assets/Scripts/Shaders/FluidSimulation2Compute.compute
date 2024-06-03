@@ -1,0 +1,74 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel UpdateNextPositions
+#pragma kernel UpdateSpatialHashing
+#pragma kernel ComputeDensity
+#pragma kernel ComputePressure
+#pragma kernel ComputeViscosity
+#pragma kernel ApplyForcesAndCollisions
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+
+struct FluidParticleData
+{
+    float2 position; // 8
+    float2 nextPosition; // 8
+    float2 velocity; // 8
+    float mass; // 4
+    float density; // 4
+    float nearDensity; // 4
+};
+
+static const int numOfThreads = 64;
+
+//Buffer that will come back
+RWStructuredBuffer<FluidParticleData> _particles;
+
+[numthreads(numOfThreads, 1, 1)]
+void UpdateNextPositions(uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+
+    _particles[id.x].nextPosition = float2(0.0f, 0.0f);
+}
+
+[numthreads(numOfThreads, 1, 1)]
+void UpdateSpatialHashing(uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+
+    _particles[id.x].mass = 0.0f;
+}
+
+[numthreads(numOfThreads, 1, 1)]
+void ComputeDensity(uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+
+    _particles[id.x].density = 0.0f;
+    _particles[id.x].nearDensity = 0.0f;
+}
+
+[numthreads(numOfThreads, 1, 1)]
+void ComputePressure(uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+
+    _particles[id.x].velocity = float2(0.0f, 0.0f);
+}
+
+[numthreads(numOfThreads, 1, 1)]
+void ComputeViscosity(uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+
+    _particles[id.x].velocity = float2(0.0f, 0.0f);
+}
+
+[numthreads(numOfThreads, 1, 1)]
+void ApplyForcesAndCollisions(uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+
+    _particles[id.x].position = float2(0.0f, 0.0f);
+}

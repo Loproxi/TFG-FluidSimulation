@@ -28,8 +28,7 @@ public struct FluidParticleData
 public class FluidSimulation2 : MonoBehaviour
 {
     [Header("Particle Related")]
-    public FluidParticle fluidParticle;
-    private FluidParticle[] _particles;
+    //private FluidParticle[] _particles;
     private FluidParticleData[] _particlesDataArray;
     private FluidInitializer _fluidInitializer;
 
@@ -52,9 +51,11 @@ public class FluidSimulation2 : MonoBehaviour
     public float viscosity = 0.0f;
     private CompactHashing compactHashing;
 
+    public ParticleRendering particleRendering;
+
     [Header("Compute Shader Related")]
     public ComputeShader compute;
-    private ComputeBuffer particles;
+    public ComputeBuffer particles;
     private ComputeBuffer spatialHashingInfo; // Vector x = particleIndex Vector Y = cellkey
     private ComputeBuffer spatialHashingIndices;
 
@@ -69,8 +70,6 @@ public class FluidSimulation2 : MonoBehaviour
 
     void Start()
     {
-        //Create Particle Buffer
-        particles = new ComputeBuffer(_fluidInitializer.numParticles, 36);
         //Fill my particles array with data
         InitializeSimulation();
         //Get Kernels ID
@@ -78,6 +77,7 @@ public class FluidSimulation2 : MonoBehaviour
         //Setting buffers to each kernel
         SetBufferOnKernels(particles,"Particles",updateNextPositionKernel,spatialHashingKernel,computeDensityKernel,computePressureKernel,computeViscosityKernel,externalForcesKernel);
 
+        particleRendering.SendDataToParticleInstancing(this, _fluidInitializer);
     }
 
     // Update is called once per frame
@@ -95,6 +95,9 @@ public class FluidSimulation2 : MonoBehaviour
 
         if (_fluidInitializer != null)
         {
+            //Create Particle Buffer
+            particles = new ComputeBuffer(_fluidInitializer.numParticles, 36);
+
             _fluidInitializer.InitializeParticles();
             SpawnParticles();
             tile = new SP_Tile();
@@ -113,15 +116,11 @@ public class FluidSimulation2 : MonoBehaviour
 
     void SpawnParticles()
     {
-        _particles = new FluidParticle[_fluidInitializer.numParticles];
         _particlesDataArray = new FluidParticleData[_fluidInitializer.numParticles];
 
         for (int i = 0; i < _fluidInitializer.numParticles; i++)
         {
-            _particles[i] = Instantiate(fluidParticle, gameObject.transform);
-            _particles[i].InitializeParticle(_fluidInitializer.positions[i], Vector2.zero, 1.0f);
             _particlesDataArray[i] = new FluidParticleData(_fluidInitializer.positions[i], Vector2.zero);
-            _particles[i].name = $"Particle: {i}";
         }
 
         particles.SetData(_particlesDataArray);
@@ -137,7 +136,12 @@ public class FluidSimulation2 : MonoBehaviour
         compute.SetFloat("deltaTime", dt);
     }
 
-#region ComputeShader
+    private void OnDestroy()
+    {
+        ReleaseBuffers(particles,spatialHashingInfo,spatialHashingIndices);
+    }
+
+    #region ComputeShader
 
     void FindKernelsInCompute()
     {
@@ -157,7 +161,7 @@ public class FluidSimulation2 : MonoBehaviour
         }
     }
 
-    void OnDispatchComputeShader(int numParticlesX,int numParticlesY = 1,int numParticlesZ = 1, int kernelID)
+    void OnDispatchComputeShader(int numParticlesX,int numParticlesY = 1,int numParticlesZ = 1, int kernelID = 0)
     {
         // How big are thread groups
         uint x,y,z;
@@ -171,5 +175,18 @@ public class FluidSimulation2 : MonoBehaviour
         compute.Dispatch(kernelID, numGroupsX, numGroupsY, numGroupsZ);
 
     }
+
+    void ReleaseBuffers(params ComputeBuffer[] buffers)
+    {
+        for (int i = 0; i < buffers.Length; i++)
+        {
+
+            if (buffers[i] != null)
+            {
+                buffers[i].Release();
+            }
+        }
+    }
+
 #endregion
 }
