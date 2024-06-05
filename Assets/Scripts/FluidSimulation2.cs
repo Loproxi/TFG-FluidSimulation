@@ -71,6 +71,7 @@ public class FluidSimulation2 : MonoBehaviour
     void Start()
     {
         //Fill my particles array with data
+        //FixSpawnParticles ON BIG NUMBERS
         InitializeSimulation();
         //Get Kernels ID
         FindKernelsInCompute();
@@ -161,7 +162,7 @@ public class FluidSimulation2 : MonoBehaviour
         }
     }
 
-    void OnDispatchComputeShader(int numParticlesX,int numParticlesY = 1,int numParticlesZ = 1, int kernelID = 0)
+    void OnDispatchComputeShader(int numParticlesX, int kernelID = 0)
     {
         // How big are thread groups
         uint x,y,z;
@@ -170,9 +171,7 @@ public class FluidSimulation2 : MonoBehaviour
 
         //Calculate number of threads depending on how many particles
         int numGroupsX = Mathf.CeilToInt(numParticlesX / (float)threadSizes.x);
-        int numGroupsY = Mathf.CeilToInt(numParticlesY / (float)threadSizes.y);
-        int numGroupsZ = Mathf.CeilToInt(numParticlesZ / (float)threadSizes.y);
-        compute.Dispatch(kernelID, numGroupsX, numGroupsY, numGroupsZ);
+        compute.Dispatch(kernelID, numGroupsX, 1, 1);
 
     }
 

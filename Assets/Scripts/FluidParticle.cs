@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class FluidParticle : MonoBehaviour
 {
-
     public Vector2 position { get; private set; }
     public Vector2 nextPosition { get; private set; }
     public Vector2 velocity { get; private set; }
