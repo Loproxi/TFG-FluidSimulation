@@ -7,7 +7,7 @@ public class FluidInitializer : MonoBehaviour
     [Header("Particle Init Settings")]
     public Vector2[] positions;
     public int numParticles = 100;
-    public float particleScale = 0.5f;
+    public float particleScale = 0.25f;
 
     [Header("Domain Bounds")]
     public Vector2 minBounds = new Vector2(0,0);
@@ -16,37 +16,32 @@ public class FluidInitializer : MonoBehaviour
     public void InitializeParticles()
     {
         positions = new Vector2[numParticles];
-
         GetPositionInBounds();
     }
     void GetPositionInBounds()
     {
-
         int numRows = Mathf.CeilToInt(Mathf.Sqrt(numParticles));
         int numCols = Mathf.CeilToInt((float)numParticles / numRows);
 
-        // Calcular el espacio entre partículas
-        float xSpacing = particleScale;
-        float ySpacing = particleScale;
-
-        Vector2 spawnCenter = new Vector2((minBounds.x + maxBounds.x) / 2, (minBounds.y + maxBounds.y) / 2);
+        // Calculate the space available for each particle
+        float xSpacing = (maxBounds.x - minBounds.x) / numCols;
+        float ySpacing = (maxBounds.y - minBounds.y) / numRows;
 
         int particleIndex = 0;
-        // Generar las posiciones y spawnear las partículas
+
         for (int row = 0; row < numRows; row++)
         {
             for (int col = 0; col < numCols; col++)
             {
                 if (particleIndex >= numParticles) return; // Si hemos calculado todas las posiciones, salir
 
-                // Calcular la posición de la partícula con respecto al centro
-                float xPos = spawnCenter.x + (col - numCols / 2) * xSpacing;
-                float yPos = spawnCenter.y + (row - numRows / 2) * ySpacing;
+                // Calculate the position of the particle within the bounds
+                float xPos = minBounds.x + col * xSpacing + xSpacing / 2;
+                float yPos = minBounds.y + row * ySpacing + ySpacing / 2;
                 Vector2 spawnPosition = new Vector2(xPos, yPos);
 
                 positions[particleIndex] = spawnPosition;
                 particleIndex++;
-
             }
         }
     }

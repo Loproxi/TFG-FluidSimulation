@@ -15,11 +15,11 @@ public class ParticleRendering : MonoBehaviour
     public void SendDataToParticleInstancing(FluidSimulation2 fluidSimulation,FluidInitializer fluidInitializer)
     {
         //OJO
-        bounds.max = fluidInitializer.maxBounds;
-        bounds.min = fluidInitializer.minBounds;
+        bounds.max = new Vector2(1000, 1000);
+        bounds.min = new Vector2(-1000,-1000);
 
         material = new Material(particleInstancingShader);
-        material.SetBuffer("particles", fluidSimulation.particles);
+        material.SetBuffer("Particles", fluidSimulation.particles);
 
         uint[] meshInstanceData = new uint[5] { 0, 0, 0, 0, 0 };
 

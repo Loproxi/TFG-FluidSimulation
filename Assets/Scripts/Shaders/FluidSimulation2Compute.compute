@@ -1,6 +1,8 @@
 // Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel UpdateNextPositions
-#pragma kernel UpdateSpatialHashing
+#pragma kernel UpdateSpatialHashingInfo
+#pragma kernel SortSpatialHashingInfo
+#pragma kernel UpdateSpatialHashingIndices
 #pragma kernel ComputeDensity
 #pragma kernel ComputePressure
 #pragma kernel ComputeViscosity
@@ -22,22 +24,47 @@ struct FluidParticleData
 static const int numOfThreads = 64;
 
 //Buffer that will come back
-RWStructuredBuffer<FluidParticleData> _particles;
+RWStructuredBuffer<FluidParticleData> Particles;
+RWStructuredBuffer<uint2> SpatialHashingInfo; // Vector x = particleIndex Vector Y = cellkey
+RWStructuredBuffer<uint> SpatialHashingIndices;
+
+float smoothingDensityRadius;
+float collisionDamping;
+float gasConstant;
+float restDensity;
+float deltaTime;
 
 [numthreads(numOfThreads, 1, 1)]
 void UpdateNextPositions(uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
+    FluidParticleData particle = Particles[id.x];
 
-    _particles[id.x].nextPosition = float2(0.0f, 0.0f);
+    Particles[id.x].nextPosition = particle.position;
 }
 
 [numthreads(numOfThreads, 1, 1)]
-void UpdateSpatialHashing(uint3 id : SV_DispatchThreadID)
+void UpdateSpatialHashingInfo(uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
 
-    _particles[id.x].mass = 0.0f;
+    Particles[id.x].mass = 0.0f;
+}
+
+[numthreads(numOfThreads, 1, 1)]
+void SortSpatialHashingInfo(uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+
+    Particles[id.x].mass = 0.0f;
+}
+
+[numthreads(numOfThreads, 1, 1)]
+void UpdateSpatialHashingIndices(uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+
+    Particles[id.x].mass = 0.0f;
 }
 
 [numthreads(numOfThreads, 1, 1)]
@@ -45,8 +72,8 @@ void ComputeDensity(uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
 
-    _particles[id.x].density = 0.0f;
-    _particles[id.x].nearDensity = 0.0f;
+    Particles[id.x].density = 0.0f;
+    Particles[id.x].nearDensity = 0.0f;
 }
 
 [numthreads(numOfThreads, 1, 1)]
@@ -54,7 +81,7 @@ void ComputePressure(uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
 
-    _particles[id.x].velocity = float2(0.0f, 0.0f);
+    Particles[id.x].velocity = float2(0.0f, 0.0f);
 }
 
 [numthreads(numOfThreads, 1, 1)]
@@ -62,7 +89,7 @@ void ComputeViscosity(uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
 
-    _particles[id.x].velocity = float2(0.0f, 0.0f);
+    Particles[id.x].velocity = float2(0.0f, 0.0f);
 }
 
 [numthreads(numOfThreads, 1, 1)]
@@ -70,5 +97,5 @@ void ApplyForcesAndCollisions(uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
 
-    _particles[id.x].position = float2(0.0f, 0.0f);
+    Particles[id.x].position = float2(0.0f, 0.0f);
 }

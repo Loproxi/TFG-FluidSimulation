@@ -27,7 +27,7 @@ Shader "Custom/Particle"
                 float nearDensity; // 4
             };
 
-            StructuredBuffer<FluidParticleData> particles;
+            StructuredBuffer<FluidParticleData> Particles;
             float _Scale;
             float4 _Color;
 
@@ -53,7 +53,7 @@ Shader "Custom/Particle"
                 UNITY_SETUP_INSTANCE_ID(v);
 
                 // Obtener la posición de la partícula usando el ID de la instancia
-                float2 particlePosition = particles[instanceID].position;
+                float2 particlePosition = Particles[instanceID].position;
                 float3 worldPosition = float3(particlePosition, 0.0);
 
                 // Escalar la partícula

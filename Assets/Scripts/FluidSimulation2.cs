@@ -61,7 +61,9 @@ public class FluidSimulation2 : MonoBehaviour
 
     //ID REFS TO FUNCTIONS IN COMPUTE
     int updateNextPositionKernel;
-    int spatialHashingKernel;
+    int updateSpatialHashingInfoKernel;
+    int sortSpatialHashingInfoKernel;
+    int updateSpatialHashingIndicesKernel;
     int computeDensityKernel;
     int computePressureKernel;
     int computeViscosityKernel;
@@ -76,7 +78,10 @@ public class FluidSimulation2 : MonoBehaviour
         //Get Kernels ID
         FindKernelsInCompute();
         //Setting buffers to each kernel
-        SetBufferOnKernels(particles,"Particles",updateNextPositionKernel,spatialHashingKernel,computeDensityKernel,computePressureKernel,computeViscosityKernel,externalForcesKernel);
+        SetBufferOnKernels(particles,"Particles",updateNextPositionKernel,updateSpatialHashingInfoKernel,computeDensityKernel,computePressureKernel,computeViscosityKernel,externalForcesKernel);
+        SetBufferOnKernels(spatialHashingInfo, "SpatialHashingInfo", updateSpatialHashingInfoKernel,sortSpatialHashingInfoKernel, updateSpatialHashingIndicesKernel, computeDensityKernel, computePressureKernel, computeViscosityKernel);
+        SetBufferOnKernels(spatialHashingIndices, "SpatialHashingIndices", updateSpatialHashingIndicesKernel, computeDensityKernel, computePressureKernel, computeViscosityKernel);
+         
 
         particleRendering.SendDataToParticleInstancing(this, _fluidInitializer);
     }
@@ -98,6 +103,8 @@ public class FluidSimulation2 : MonoBehaviour
         {
             //Create Particle Buffer
             particles = new ComputeBuffer(_fluidInitializer.numParticles, 36);
+            spatialHashingInfo = new ComputeBuffer(_fluidInitializer.numParticles, 8);
+            spatialHashingIndices = new ComputeBuffer(_fluidInitializer.numParticles, 4);
 
             _fluidInitializer.InitializeParticles();
             SpawnParticles();
@@ -147,7 +154,9 @@ public class FluidSimulation2 : MonoBehaviour
     void FindKernelsInCompute()
     {
         updateNextPositionKernel = compute.FindKernel("UpdateNextPositions");
-        spatialHashingKernel = compute.FindKernel("UpdateSpatialHashing");
+        updateSpatialHashingInfoKernel = compute.FindKernel("UpdateSpatialHashingInfo");
+        sortSpatialHashingInfoKernel = compute.FindKernel("SortSpatialHashingInfo");
+        updateSpatialHashingIndicesKernel = compute.FindKernel("UpdateSpatialHashingIndices");
         computeDensityKernel = compute.FindKernel("ComputeDensity");
         computePressureKernel = compute.FindKernel("ComputePressure");
         computeViscosityKernel = compute.FindKernel("ComputeViscosity");
