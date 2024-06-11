@@ -80,7 +80,7 @@ public class FluidSimulation2 : MonoBehaviour
         //Setting buffers to each kernel
         SetBufferOnKernels(particles,"Particles",updateNextPositionKernel,updateSpatialHashingInfoKernel,computeDensityKernel,computePressureKernel,computeViscosityKernel,externalForcesKernel);
         SetBufferOnKernels(spatialHashingInfo, "SpatialHashingInfo", updateSpatialHashingInfoKernel,sortSpatialHashingInfoKernel, updateSpatialHashingIndicesKernel, computeDensityKernel, computePressureKernel, computeViscosityKernel);
-        SetBufferOnKernels(spatialHashingIndices, "SpatialHashingIndices", updateSpatialHashingIndicesKernel, computeDensityKernel, computePressureKernel, computeViscosityKernel);
+        SetBufferOnKernels(spatialHashingIndices, "SpatialHashingIndices", updateSpatialHashingInfoKernel,updateSpatialHashingIndicesKernel, computeDensityKernel, computePressureKernel, computeViscosityKernel);
          
 
         particleRendering.SendDataToParticleInstancing(this, _fluidInitializer);
@@ -136,12 +136,28 @@ public class FluidSimulation2 : MonoBehaviour
 
     void UpdateSimulation(float dt)
     {
+        UpdateComputeVariables(dt);
+
+        OnDispatchComputeShader(_fluidInitializer.numParticles, updateNextPositionKernel);
+        OnDispatchComputeShader(_fluidInitializer.numParticles, updateSpatialHashingInfoKernel);
+        OnDispatchComputeShader(_fluidInitializer.numParticles, sortSpatialHashingInfoKernel);
+        OnDispatchComputeShader(_fluidInitializer.numParticles, updateSpatialHashingIndicesKernel);
+        OnDispatchComputeShader(_fluidInitializer.numParticles, computeDensityKernel);
+        OnDispatchComputeShader(_fluidInitializer.numParticles, computePressureKernel);
+        OnDispatchComputeShader(_fluidInitializer.numParticles, computeViscosityKernel);
+        OnDispatchComputeShader(_fluidInitializer.numParticles, externalForcesKernel);
+    }
+
+    private void UpdateComputeVariables(float dt)
+    {
         //Update the simulation Variables each frame
         compute.SetFloat("smoothingDensityRadius", smoothDensityRadius);
-        compute.SetFloat("collisionDamping",collisionDamping);
+        compute.SetFloat("collisionDamping", collisionDamping);
         compute.SetFloat("gasConstant", gasConstant);
         compute.SetFloat("restDensity", restDensity);
+        compute.SetFloat("gravity", gravity);
         compute.SetFloat("deltaTime", dt);
+        compute.SetInt("numOfParticles", _fluidInitializer.numParticles);
     }
 
     private void OnDestroy()
@@ -173,13 +189,14 @@ public class FluidSimulation2 : MonoBehaviour
 
     void OnDispatchComputeShader(int numParticlesX, int kernelID = 0)
     {
-        // How big are thread groups
+        // How big are WORK GROUPS
         uint x,y,z;
         compute.GetKernelThreadGroupSizes(kernelID,out x,out y,out z);
         Vector3Int threadSizes = new Vector3Int((int)x,(int)y,(int)z);
 
         //Calculate number of threads depending on how many particles
         int numGroupsX = Mathf.CeilToInt(numParticlesX / (float)threadSizes.x);
+        // HOW MANY WORK GROUPS DO WE NEED
         compute.Dispatch(kernelID, numGroupsX, 1, 1);
 
     }

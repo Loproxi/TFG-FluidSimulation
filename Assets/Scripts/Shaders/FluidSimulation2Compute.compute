@@ -8,8 +8,8 @@
 #pragma kernel ComputeViscosity
 #pragma kernel ApplyForcesAndCollisions
 
-// Create a RenderTexture with enableRandomWrite flag and set it
-// with cs.SetTexture
+//Include Functions From another hlsl
+//#include "FluidComputeTools.hlsl" // WHY THS BREAKS
 
 struct FluidParticleData
 {
@@ -22,6 +22,7 @@ struct FluidParticleData
 };
 
 static const int numOfThreads = 64;
+static const uint MAX_UINT_VALUE = 4294967295;
 
 //Buffer that will come back
 RWStructuredBuffer<FluidParticleData> Particles;
@@ -32,31 +33,47 @@ float smoothingDensityRadius;
 float collisionDamping;
 float gasConstant;
 float restDensity;
+float gravity;
 float deltaTime;
+int numOfParticles;
 
+//EACH WORK GROUP HAS 64 THREADS INSIDE OF IT
 [numthreads(numOfThreads, 1, 1)]
 void UpdateNextPositions(uint3 id : SV_DispatchThreadID)
-{
-    // TODO: insert actual code here!
-    FluidParticleData particle = Particles[id.x];
+{  
+    //Create a deltaTime to predict
+    float predictionDeltaTime = 1 / 120.0f;
+    
+    Particles[id.x].velocity += float2(0, gravity * deltaTime);
+    //Predict where the particle is going to be on the next frame
+    Particles[id.x].nextPosition = Particles[id.x].position + Particles[id.x].velocity * predictionDeltaTime;
 
-    Particles[id.x].nextPosition = particle.position;
 }
 
 [numthreads(numOfThreads, 1, 1)]
 void UpdateSpatialHashingInfo(uint3 id : SV_DispatchThreadID)
 {
-    // TODO: insert actual code here!
+    
+    uint particleId = id.x;
+    //Restart All indices by setting all of them to the Max UINT value
+    SpatialHashingIndices[particleId].x = MAX_UINT_VALUE;
+    
+    //float2 cell = GetCellFromPosition(Particles[particleId].position, smoothingDensityRadius);
+    //uint key = GetKeyFromHashedCell(HashingCell(cell),numOfParticles);
 
-    Particles[id.x].mass = 0.0f;
+    //Update the Info on the spatial hashing
+    //SpatialHashingInfo[particleId] = uint2((uint) particleId, key);
+
 }
 
-[numthreads(numOfThreads, 1, 1)]
+[numthreads(1, 1, 1)]
 void SortSpatialHashingInfo(uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
+    
+    //for (int i = 0; i<)
 
-    Particles[id.x].mass = 0.0f;
+    SpatialHashingInfo[id.x].x = 0.0f;
 }
 
 [numthreads(numOfThreads, 1, 1)]
@@ -64,7 +81,7 @@ void UpdateSpatialHashingIndices(uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
 
-    Particles[id.x].mass = 0.0f;
+    SpatialHashingIndices[id.x].x = 0.0f;
 }
 
 [numthreads(numOfThreads, 1, 1)]
@@ -81,7 +98,7 @@ void ComputePressure(uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
 
-    Particles[id.x].velocity = float2(0.0f, 0.0f);
+    Particles[id.x].density = 0.0f;
 }
 
 [numthreads(numOfThreads, 1, 1)]
@@ -89,7 +106,7 @@ void ComputeViscosity(uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
 
-    Particles[id.x].velocity = float2(0.0f, 0.0f);
+    Particles[id.x].density = 0.0f;
 }
 
 [numthreads(numOfThreads, 1, 1)]
@@ -97,5 +114,5 @@ void ApplyForcesAndCollisions(uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
 
-    Particles[id.x].position = float2(0.0f, 0.0f);
+    Particles[id.x].density = 0.0f;
 }

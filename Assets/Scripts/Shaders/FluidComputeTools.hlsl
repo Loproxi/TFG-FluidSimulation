@@ -55,7 +55,7 @@ float Ver_1_SmoothNearDensityKernel(float radius, float dist)
 {
     if (dist < radius)
     {
-        float volume = 10 / PI * pow(radius, 5));
+        float volume = 10 / (PI * pow(radius, 5));
         return (radius - dist) * (radius - dist) * (radius - dist) * volume;
     }
     return 0.0f;

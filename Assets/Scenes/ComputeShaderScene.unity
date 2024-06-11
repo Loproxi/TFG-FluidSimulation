@@ -40725,5 +40725,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
   particleInstancingShader: {fileID: 4800000, guid: 4099fbc2852892c4b8f3dd91c97fc3ba, type: 3}
-  scale: 0.5
+  scale: 0.25
   color: {r: 0.9528302, g: 0.05842829, b: 0.05842829, a: 0}
