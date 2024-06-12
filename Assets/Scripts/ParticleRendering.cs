@@ -15,8 +15,8 @@ public class ParticleRendering : MonoBehaviour
     public void SendDataToParticleInstancing(FluidSimulation2 fluidSimulation,FluidInitializer fluidInitializer)
     {
         //OJO
-        bounds.max = new Vector2(1000, 1000);
-        bounds.min = new Vector2(-1000,-1000);
+        bounds.max = new Vector2(5000, 5000);
+        bounds.min = new Vector2(-5000,-5000);
 
         material = new Material(particleInstancingShader);
         material.SetBuffer("Particles", fluidSimulation.particles);
@@ -37,6 +37,7 @@ public class ParticleRendering : MonoBehaviour
     {
         material.SetFloat("_Scale",scale);
         material.SetColor("_Color", color);
+        //GraphicsBufferHandle id = material.GetBuffer("Particles");
         //0 => subset of the mesh but since there is only one material
         //This bounds is needed for the shader knowing the bounding volume surrounding the instances you intend to draw.
         Graphics.DrawMeshInstancedIndirect(mesh, 0, material, bounds, meshInstanceBuffer);

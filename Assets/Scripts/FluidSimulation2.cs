@@ -136,7 +136,7 @@ public class FluidSimulation2 : MonoBehaviour
     void UpdateSimulation(float dt)
     {
         UpdateComputeVariables(dt);
-
+       
         OnDispatchComputeShader(_fluidInitializer.numParticles, updateNextPositionKernel);
         //OnDispatchComputeShader(_fluidInitializer.numParticles, updateSpatialHashingInfoKernel);
         //OnDispatchComputeShader(_fluidInitializer.numParticles, sortSpatialHashingInfoKernel);
@@ -145,6 +145,8 @@ public class FluidSimulation2 : MonoBehaviour
         //OnDispatchComputeShader(_fluidInitializer.numParticles, computePressureKernel);
         //OnDispatchComputeShader(_fluidInitializer.numParticles, computeViscosityKernel);
         OnDispatchComputeShader(_fluidInitializer.numParticles, externalForcesKernel);
+        particles.GetData(_particlesDataArray);
+        //Position doesn't change Detect why
     }
 
     private void UpdateComputeVariables(float dt)

@@ -47,7 +47,7 @@ void UpdateNextPositions(uint3 id : SV_DispatchThreadID)
     //Create a deltaTime to predict
     float predictionDeltaTime = 1 / 120.0f;
     
-    Particles[id.x].velocity += float2(0, gravity * deltaTime);
+    Particles[id.x].velocity += float2(0, gravity);
     //Predict where the particle is going to be on the next frame
     Particles[id.x].nextPosition = Particles[id.x].position + Particles[id.x].velocity * predictionDeltaTime;
 
