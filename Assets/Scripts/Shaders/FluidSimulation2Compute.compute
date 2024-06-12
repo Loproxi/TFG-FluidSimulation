@@ -9,7 +9,7 @@
 #pragma kernel ApplyForcesAndCollisions
 
 //Include Functions From another hlsl
-//#include "FluidComputeTools.hlsl" // WHY THS BREAKS
+#include "FluidComputeTools.hlsl" // WHY THS BREAKS
 
 struct FluidParticleData
 {
@@ -35,6 +35,9 @@ float gasConstant;
 float restDensity;
 float gravity;
 float deltaTime;
+float viscosity;
+float4 bounds; // MINBOUNDS X, MINBOUNDS Y, MAXBOUNDS X,MAXBOUNDS Y
+float particleScale;
 int numOfParticles;
 
 //EACH WORK GROUP HAS 64 THREADS INSIDE OF IT
@@ -58,11 +61,11 @@ void UpdateSpatialHashingInfo(uint3 id : SV_DispatchThreadID)
     //Restart All indices by setting all of them to the Max UINT value
     SpatialHashingIndices[particleId].x = MAX_UINT_VALUE;
     
-    //float2 cell = GetCellFromPosition(Particles[particleId].position, smoothingDensityRadius);
-    //uint key = GetKeyFromHashedCell(HashingCell(cell),numOfParticles);
+    float2 cell = GetCellFromPosition(Particles[particleId].position, smoothingDensityRadius);
+    uint key = GetKeyFromHashedCell(HashingCell(cell), numOfParticles);
 
     //Update the Info on the spatial hashing
-    //SpatialHashingInfo[particleId] = uint2((uint) particleId, key);
+    SpatialHashingInfo[particleId] = uint2((uint) particleId, key);
 
 }
 
@@ -73,46 +76,207 @@ void SortSpatialHashingInfo(uint3 id : SV_DispatchThreadID)
     
     //for (int i = 0; i<)
 
-    SpatialHashingInfo[id.x].x = 0.0f;
+    //SpatialHashingInfo[id.x].x = 0.0f;
 }
 
 [numthreads(numOfThreads, 1, 1)]
 void UpdateSpatialHashingIndices(uint3 id : SV_DispatchThreadID)
 {
-    // TODO: insert actual code here!
-
-    SpatialHashingIndices[id.x].x = 0.0f;
+    uint particleId = id.x;
+    
+    uint key = SpatialHashingInfo[particleId].y;
+    uint beforeKey = MAX_UINT_VALUE;
+    
+    if ((particleId-1) >= 0)
+    {
+        beforeKey = SpatialHashingInfo[particleId - 1].y;
+    }
+    
+    if(key != beforeKey || particleId == 0)
+    {
+        SpatialHashingIndices[key] = particleId;
+    }
 }
 
 [numthreads(numOfThreads, 1, 1)]
 void ComputeDensity(uint3 id : SV_DispatchThreadID)
 {
-    // TODO: insert actual code here!
+    uint particleId = id.x;
+    FluidParticleData particle = Particles[particleId];
+    //Compute radius * radius to avoid computing square
+    float radius2 = smoothingDensityRadius * smoothingDensityRadius;
+    float density = 0.0f;
+    float nearDens = 0.0f;
+    const int nearCellsSize = 9;
+    int2 nearCells[nearCellsSize];
+    
+    SelectSurroundingCells(particle.nextPosition, smoothingDensityRadius, nearCells);
 
-    Particles[id.x].density = 0.0f;
-    Particles[id.x].nearDensity = 0.0f;
+    for (int i = 0; i < nearCellsSize; i++)
+    {
+        uint key = GetKeyFromHashedCell(HashingCell(nearCells[i]),numOfParticles);
+        uint index = SpatialHashingIndices[key];
+                        //POT ESTAR MALAMENT
+        while (index < (uint)numOfParticles && SpatialHashingInfo[index].y == key)
+        {
+
+            uint neighbourIndex = SpatialHashingInfo[index].x;
+
+            float2 particleToOther = Particles[neighbourIndex].nextPosition - particle.nextPosition;
+            float sqrDistFromCenterToNeighbour = dot(particleToOther, particleToOther);
+
+            if (sqrDistFromCenterToNeighbour <= radius2)
+            {
+                float dist = sqrt(sqrDistFromCenterToNeighbour);
+                float influence = Ver_2_SmoothDensityKernel(smoothingDensityRadius, dist);
+                float nearInfluence = Ver_1_SmoothNearDensityKernel(smoothingDensityRadius, dist);
+
+                density += particle.mass * influence;
+                nearDens += particle.mass * nearInfluence;
+            }
+            index++;
+        }
+    }
+    density = max(density, 0.0001f);
+    nearDens = max(nearDens, 0.0001f);
+    
+    Particles[id.x].density = density;
+    Particles[id.x].nearDensity = nearDens;
 }
 
 [numthreads(numOfThreads, 1, 1)]
 void ComputePressure(uint3 id : SV_DispatchThreadID)
 {
-    // TODO: insert actual code here!
+    uint particleId = id.x;
+    FluidParticleData particle = Particles[particleId];
+    //Compute radius * radius to avoid computing square
+    float radius2 = smoothingDensityRadius * smoothingDensityRadius;
+    float2 pressure = float2(0.0f,0.0f);
+    const int nearCellsSize = 9;
+    int2 nearCells[nearCellsSize];
+    
+    SelectSurroundingCells(particle.nextPosition, smoothingDensityRadius, nearCells);
 
-    Particles[id.x].density = 0.0f;
+    for (int i = 0; i < nearCellsSize; i++)
+    {
+        uint key = GetKeyFromHashedCell(HashingCell(nearCells[i]), numOfParticles);
+        uint index = SpatialHashingIndices[key];
+                        //POT ESTAR MALAMENT
+        while (index < (uint)numOfParticles && SpatialHashingInfo[index].y == key)
+        {
+
+            uint neighbourIndex = SpatialHashingInfo[index].x;
+
+            if (particleId == neighbourIndex)
+            {
+                index++;
+                continue;
+            }
+            
+            float2 particleToOther = Particles[neighbourIndex].nextPosition - particle.nextPosition;
+            float sqrDistFromCenterToNeighbour = dot(particleToOther, particleToOther);
+
+            if (sqrDistFromCenterToNeighbour <= radius2)
+            {
+
+                
+                float dist = sqrt(sqrDistFromCenterToNeighbour);
+                float2 direction = dist > 0 ? particleToOther / dist : float2(0, 1);
+                float slope = Derivative_Ver_2_SmoothDensityKernel(smoothingDensityRadius, dist);
+                float nearSlope = Derivative_Ver_1_SmoothNearDensityKernel(smoothingDensityRadius, dist);
+                float pressureBetweenParticles = (ConvertDensityIntoPressure(particle.density, restDensity, gasConstant) + ConvertDensityIntoPressure(Particles[neighbourIndex].density, restDensity, gasConstant)) * 0.5f;
+                float nearPressureBetweenParticles = (ConvertNearDensityIntoPressure(particle.nearDensity, gasConstant) + ConvertNearDensityIntoPressure(Particles[neighbourIndex].nearDensity,gasConstant)) * 0.5f;
+      
+                pressure += particle.mass * direction * slope * pressureBetweenParticles / Particles[neighbourIndex].density;
+                pressure += direction * nearSlope * nearPressureBetweenParticles / Particles[neighbourIndex].nearDensity;
+                
+            }
+            index++;
+        }
+    }
+    
+    float2 pressureAcceleration = float2(0.0f,0.0f);
+
+    pressureAcceleration = pressure / particle.density;
+
+    particle.velocity += pressureAcceleration * deltaTime;
 }
 
 [numthreads(numOfThreads, 1, 1)]
 void ComputeViscosity(uint3 id : SV_DispatchThreadID)
 {
-    // TODO: insert actual code here!
+    uint particleId = id.x;
+    FluidParticleData particle = Particles[particleId];
+    //Compute radius * radius to avoid computing square
+    float radius2 = smoothingDensityRadius * smoothingDensityRadius;
+    float2 _viscosity = float2(0.0f,0.0f);
+    const int nearCellsSize = 9;
+    int2 nearCells[nearCellsSize];
+    
+    SelectSurroundingCells(particle.nextPosition, smoothingDensityRadius, nearCells);
 
-    Particles[id.x].density = 0.0f;
+    for (int i = 0; i < nearCellsSize; i++)
+    {
+        uint key = GetKeyFromHashedCell(HashingCell(nearCells[i]), numOfParticles);
+        uint index = SpatialHashingIndices[key];
+                        //POT ESTAR MALAMENT
+        while (index < (uint) numOfParticles && SpatialHashingInfo[index].y == key)
+        {
+
+            uint neighbourIndex = SpatialHashingInfo[index].x;
+            
+            if (particleId == neighbourIndex)
+            {
+                index++;
+                continue;
+            }
+
+            float2 particleToOther = Particles[neighbourIndex].nextPosition - particle.nextPosition;
+            float sqrDistFromCenterToNeighbour = dot(particleToOther, particleToOther);
+
+            if (sqrDistFromCenterToNeighbour <= radius2)
+            {
+                float dist = sqrt(sqrDistFromCenterToNeighbour);
+                float viscInfluence = Ver_3_SmoothDensityKernel(smoothingDensityRadius, dist);
+
+                _viscosity = particle.mass * (Particles[neighbourIndex].velocity - particle.velocity) / Particles[neighbourIndex].density;
+                _viscosity *= viscInfluence;
+            }
+            index++;
+        }
+    }
+    
+    particle.velocity += _viscosity * viscosity * deltaTime;
 }
 
 [numthreads(numOfThreads, 1, 1)]
 void ApplyForcesAndCollisions(uint3 id : SV_DispatchThreadID)
 {
-    // TODO: insert actual code here!
+    //Apply Velocity to particles
+    uint particleId = id.x;
+    FluidParticleData particle = Particles[particleId];
+    particle.position += particle.velocity * deltaTime;
+    
+    float2 particlePosition = particle.position;
+    float2 particleVelocity = particle.velocity;
 
-    Particles[id.x].density = 0.0f;
+    float2 particleSize = float2(1.0f,1.0f) * particleScale;
+
+    particle.position = float2(clamp(particlePosition.x, bounds.x + particleSize.x, bounds.z - particleSize.x),
+                                clamp(particlePosition.y, bounds.y + particleSize.y, bounds.w - particleSize.y));
+    
+    // Check collisions with the boundaries
+    if (particlePosition.x < (bounds.x + particleSize.x) || particlePosition.x > (bounds.z - particleSize.x))
+    {
+        // Invert X velocity
+        particle.velocity = float2(particleVelocity.x * -1 * collisionDamping, particleVelocity.y);
+
+    }
+
+    if (particlePosition.y < (bounds.y + particleSize.y) || particlePosition.y > (bounds.w - particleSize.y))
+    {
+        // Invert Y velocity
+        particle.velocity = float2(particleVelocity.x, particleVelocity.y * -1 * collisionDamping);
+    }
+
 }

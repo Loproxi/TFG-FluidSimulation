@@ -34,7 +34,6 @@ public class FluidSimulation2 : MonoBehaviour
 
     private SP_Tile tile;
     private float deltaTime = 0.0f;
-    private float predictiondeltaTime = 0.0f;
 
     //public GameObject sphere;
     private List<IFluidCollider> colliders;
@@ -139,12 +138,12 @@ public class FluidSimulation2 : MonoBehaviour
         UpdateComputeVariables(dt);
 
         OnDispatchComputeShader(_fluidInitializer.numParticles, updateNextPositionKernel);
-        OnDispatchComputeShader(_fluidInitializer.numParticles, updateSpatialHashingInfoKernel);
-        OnDispatchComputeShader(_fluidInitializer.numParticles, sortSpatialHashingInfoKernel);
-        OnDispatchComputeShader(_fluidInitializer.numParticles, updateSpatialHashingIndicesKernel);
-        OnDispatchComputeShader(_fluidInitializer.numParticles, computeDensityKernel);
-        OnDispatchComputeShader(_fluidInitializer.numParticles, computePressureKernel);
-        OnDispatchComputeShader(_fluidInitializer.numParticles, computeViscosityKernel);
+        //OnDispatchComputeShader(_fluidInitializer.numParticles, updateSpatialHashingInfoKernel);
+        //OnDispatchComputeShader(_fluidInitializer.numParticles, sortSpatialHashingInfoKernel);
+        //OnDispatchComputeShader(_fluidInitializer.numParticles, updateSpatialHashingIndicesKernel);
+        //OnDispatchComputeShader(_fluidInitializer.numParticles, computeDensityKernel);
+        //OnDispatchComputeShader(_fluidInitializer.numParticles, computePressureKernel);
+        //OnDispatchComputeShader(_fluidInitializer.numParticles, computeViscosityKernel);
         OnDispatchComputeShader(_fluidInitializer.numParticles, externalForcesKernel);
     }
 
@@ -157,6 +156,9 @@ public class FluidSimulation2 : MonoBehaviour
         compute.SetFloat("restDensity", restDensity);
         compute.SetFloat("gravity", gravity);
         compute.SetFloat("deltaTime", dt);
+        compute.SetFloat("viscosity",viscosity);
+        compute.SetVector("bounds",new Vector4(_fluidInitializer.minBounds.x, _fluidInitializer.minBounds.y, _fluidInitializer.maxBounds.x, _fluidInitializer.maxBounds.y));
+        compute.SetFloat("particleScale", _fluidInitializer.particleScale);
         compute.SetInt("numOfParticles", _fluidInitializer.numParticles);
     }
 

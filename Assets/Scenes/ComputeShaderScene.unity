@@ -1486,7 +1486,7 @@ MonoBehaviour:
   restDensity: 5.41
   gasConstant: 15.95
   collisionDamping: 1
-  gravity: -3
+  gravity: -7.38
   viscosity: 2.4
   particleRendering: {fileID: 2138592031}
   compute: {fileID: 7200000, guid: 046901d5d7875694a9d4d5e19a46e657, type: 3}
