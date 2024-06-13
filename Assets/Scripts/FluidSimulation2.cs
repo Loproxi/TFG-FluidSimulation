@@ -138,14 +138,17 @@ public class FluidSimulation2 : MonoBehaviour
         UpdateComputeVariables(dt);
        
         OnDispatchComputeShader(_fluidInitializer.numParticles, updateNextPositionKernel);
-        //OnDispatchComputeShader(_fluidInitializer.numParticles, updateSpatialHashingInfoKernel);
-        //OnDispatchComputeShader(_fluidInitializer.numParticles, sortSpatialHashingInfoKernel);
-        //OnDispatchComputeShader(_fluidInitializer.numParticles, updateSpatialHashingIndicesKernel);
-        //OnDispatchComputeShader(_fluidInitializer.numParticles, computeDensityKernel);
-        //OnDispatchComputeShader(_fluidInitializer.numParticles, computePressureKernel);
-        //OnDispatchComputeShader(_fluidInitializer.numParticles, computeViscosityKernel);
+        OnDispatchComputeShader(_fluidInitializer.numParticles, updateSpatialHashingInfoKernel);
+        OnDispatchComputeShader(_fluidInitializer.numParticles, sortSpatialHashingInfoKernel);
+        OnDispatchComputeShader(_fluidInitializer.numParticles, updateSpatialHashingIndicesKernel);
+        OnDispatchComputeShader(_fluidInitializer.numParticles, computeDensityKernel);
+        OnDispatchComputeShader(_fluidInitializer.numParticles, computePressureKernel);
+        OnDispatchComputeShader(_fluidInitializer.numParticles, computeViscosityKernel);
         OnDispatchComputeShader(_fluidInitializer.numParticles, externalForcesKernel);
         particles.GetData(_particlesDataArray);
+        uint2[] info = new uint2[_fluidInitializer.numParticles];
+        spatialHashingInfo.GetData(info);
+        //Check why spatialHashing info has particleIds Dplicated
         //Position doesn't change Detect why
     }
 

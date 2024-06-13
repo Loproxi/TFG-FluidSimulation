@@ -44,6 +44,8 @@ int numOfParticles;
 [numthreads(numOfThreads, 1, 1)]
 void UpdateNextPositions(uint3 id : SV_DispatchThreadID)
 {  
+    if (id.x >= (uint) numOfParticles)
+        return;
     //Create a deltaTime to predict
     float predictionDeltaTime = 1 / 120.0f;
     
@@ -56,32 +58,55 @@ void UpdateNextPositions(uint3 id : SV_DispatchThreadID)
 [numthreads(numOfThreads, 1, 1)]
 void UpdateSpatialHashingInfo(uint3 id : SV_DispatchThreadID)
 {
+    if (id.x >= (uint) numOfParticles)
+        return;
     
     uint particleId = id.x;
     //Restart All indices by setting all of them to the Max UINT value
     SpatialHashingIndices[particleId].x = MAX_UINT_VALUE;
     
-    float2 cell = GetCellFromPosition(Particles[particleId].position, smoothingDensityRadius);
+    int2 cell = GetCellFromPosition(Particles[particleId].position, smoothingDensityRadius);
     uint key = GetKeyFromHashedCell(HashingCell(cell), numOfParticles);
 
     //Update the Info on the spatial hashing
-    SpatialHashingInfo[particleId] = uint2((uint) particleId, key);
+    SpatialHashingInfo[id.x] = uint2(particleId, key);
 
 }
 
 [numthreads(1, 1, 1)]
 void SortSpatialHashingInfo(uint3 id : SV_DispatchThreadID)
 {
-    // TODO: insert actual code here!
+    if (id.x >= (uint) numOfParticles)
+        return;
     
-    //for (int i = 0; i<)
+    int i, j;
+    bool swapped;
+    for (i = 0; i < numOfParticles - 1;i++)
+    {
+        swapped = false;
+        for (j = 0; j < numOfParticles - i - 1; j++)
+        {
+            if(SpatialHashingInfo[j].y > SpatialHashingInfo[j+1].y)
+            {
+                uint2 aux = SpatialHashingInfo[j];
+                SpatialHashingInfo[j] = SpatialHashingInfo[j + 1];
+                SpatialHashingInfo[j + 1] = aux;
+                swapped = true;
 
-    //SpatialHashingInfo[id.x].x = 0.0f;
+            }
+        }
+        if(swapped == false)
+            break;
+    }
+    
 }
 
 [numthreads(numOfThreads, 1, 1)]
 void UpdateSpatialHashingIndices(uint3 id : SV_DispatchThreadID)
 {
+    if (id.x >= (uint) numOfParticles)
+        return;
+    
     uint particleId = id.x;
     
     uint key = SpatialHashingInfo[particleId].y;
@@ -101,6 +126,9 @@ void UpdateSpatialHashingIndices(uint3 id : SV_DispatchThreadID)
 [numthreads(numOfThreads, 1, 1)]
 void ComputeDensity(uint3 id : SV_DispatchThreadID)
 {
+    if (id.x >= (uint) numOfParticles)
+        return;
+    
     uint particleId = id.x;
     FluidParticleData particle = Particles[particleId];
     //Compute radius * radius to avoid computing square
@@ -147,6 +175,9 @@ void ComputeDensity(uint3 id : SV_DispatchThreadID)
 [numthreads(numOfThreads, 1, 1)]
 void ComputePressure(uint3 id : SV_DispatchThreadID)
 {
+    if (id.x >= (uint) numOfParticles)
+        return;
+    
     uint particleId = id.x;
     FluidParticleData particle = Particles[particleId];
     //Compute radius * radius to avoid computing square
@@ -199,12 +230,15 @@ void ComputePressure(uint3 id : SV_DispatchThreadID)
 
     pressureAcceleration = pressure / particle.density;
 
-    particle.velocity += pressureAcceleration * deltaTime;
+    Particles[particleId].velocity += pressureAcceleration * deltaTime;
 }
 
 [numthreads(numOfThreads, 1, 1)]
 void ComputeViscosity(uint3 id : SV_DispatchThreadID)
 {
+    if (id.x >= (uint) numOfParticles)
+        return;
+    
     uint particleId = id.x;
     FluidParticleData particle = Particles[particleId];
     //Compute radius * radius to avoid computing square
@@ -246,37 +280,39 @@ void ComputeViscosity(uint3 id : SV_DispatchThreadID)
         }
     }
     
-    particle.velocity += _viscosity * viscosity * deltaTime;
+    Particles[particleId].velocity += _viscosity * viscosity * deltaTime;
 }
 
 [numthreads(numOfThreads, 1, 1)]
 void ApplyForcesAndCollisions(uint3 id : SV_DispatchThreadID)
 {
+    if (id.x >= (uint)numOfParticles)
+        return;
     //Apply Velocity to particles
     uint particleId = id.x;
-    FluidParticleData particle = Particles[particleId];
-    particle.position += particle.velocity * deltaTime;
+    Particles[particleId].position += Particles[particleId].velocity * deltaTime;
     
-    float2 particlePosition = particle.position;
-    float2 particleVelocity = particle.velocity;
+    float2 particlePosition = Particles[particleId].position;
+    float2 particleVelocity = Particles[particleId].velocity;
 
     float2 particleSize = float2(1.0f,1.0f) * particleScale;
 
-    particle.position = float2(clamp(particlePosition.x, bounds.x + particleSize.x, bounds.z - particleSize.x),
+    Particles[particleId].position = float2(clamp(particlePosition.x, bounds.x + particleSize.x, bounds.z - particleSize.x),
                                 clamp(particlePosition.y, bounds.y + particleSize.y, bounds.w - particleSize.y));
     
     // Check collisions with the boundaries
     if (particlePosition.x < (bounds.x + particleSize.x) || particlePosition.x > (bounds.z - particleSize.x))
     {
         // Invert X velocity
-        particle.velocity = float2(particleVelocity.x * -1 * collisionDamping, particleVelocity.y);
+        Particles[particleId].velocity = float2(particleVelocity.x * -1 * collisionDamping, particleVelocity.y);
 
     }
 
     if (particlePosition.y < (bounds.y + particleSize.y) || particlePosition.y > (bounds.w - particleSize.y))
     {
         // Invert Y velocity
-        particle.velocity = float2(particleVelocity.x, particleVelocity.y * -1 * collisionDamping);
+        Particles[particleId].velocity = float2(particleVelocity.x, particleVelocity.y * -1 * collisionDamping);
     }
 
+    
 }
