@@ -1503,7 +1503,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   positions: []
-  numParticles: 1000
+  numParticles: 8192
   particleScale: 0.75
   minBounds: {x: -25.5, y: -21.3}
   maxBounds: {x: 7.8, y: 0.2}

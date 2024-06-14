@@ -39,29 +39,35 @@ float viscosity;
 float4 bounds; // MINBOUNDS X, MINBOUNDS Y, MAXBOUNDS X,MAXBOUNDS Y
 float particleScale;
 int numOfParticles;
+int numEntries;
+int groupWidth;
+int groupHeight;
+int stepIndex;
 
 //EACH WORK GROUP HAS 64 THREADS INSIDE OF IT
 [numthreads(numOfThreads, 1, 1)]
-void UpdateNextPositions(uint3 id : SV_DispatchThreadID)
+void UpdateNextPositions(uint3 groupID : SV_GroupID,uint groupIndex : SV_GroupIndex)
 {  
-    if (id.x >= (uint) numOfParticles)
+    uint particleId = groupID.x * numOfThreads + groupIndex;
+    
+    if (particleId >= (uint) numOfParticles)
         return;
     //Create a deltaTime to predict
     float predictionDeltaTime = 1 / 120.0f;
     
-    Particles[id.x].velocity += float2(0, gravity);
+    Particles[particleId].velocity += float2(0, gravity);
     //Predict where the particle is going to be on the next frame
-    Particles[id.x].nextPosition = Particles[id.x].position + Particles[id.x].velocity * predictionDeltaTime;
+    Particles[particleId].nextPosition = Particles[particleId].position + Particles[particleId].velocity * predictionDeltaTime;
 
 }
 
 [numthreads(numOfThreads, 1, 1)]
-void UpdateSpatialHashingInfo(uint3 id : SV_DispatchThreadID)
+void UpdateSpatialHashingInfo(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
 {
-    if (id.x >= (uint) numOfParticles)
+    uint particleId = groupID.x * numOfThreads + groupIndex;
+    if (particleId >= (uint) numOfParticles)
         return;
     
-    uint particleId = id.x;
     //Restart All indices by setting all of them to the Max UINT value
     SpatialHashingIndices[particleId].x = MAX_UINT_VALUE;
     
@@ -69,45 +75,43 @@ void UpdateSpatialHashingInfo(uint3 id : SV_DispatchThreadID)
     uint key = GetKeyFromHashedCell(HashingCell(cell), numOfParticles);
 
     //Update the Info on the spatial hashing
-    SpatialHashingInfo[id.x] = uint2(particleId, key);
+    SpatialHashingInfo[particleId] = uint2(particleId, key);
 
 }
 
-[numthreads(1, 1, 1)]
+[numthreads(128, 1, 1)]
 void SortSpatialHashingInfo(uint3 id : SV_DispatchThreadID)
 {
-    if (id.x >= (uint) numOfParticles)
-        return;
-    
-    int i, j;
-    bool swapped;
-    for (i = 0; i < numOfParticles - 1;i++)
-    {
-        swapped = false;
-        for (j = 0; j < numOfParticles - i - 1; j++)
-        {
-            if(SpatialHashingInfo[j].y > SpatialHashingInfo[j+1].y)
-            {
-                uint2 aux = SpatialHashingInfo[j];
-                SpatialHashingInfo[j] = SpatialHashingInfo[j + 1];
-                SpatialHashingInfo[j + 1] = aux;
-                swapped = true;
+    uint i = id.x;
 
-            }
-        }
-        if(swapped == false)
-            break;
+    uint hIndex = i & (groupWidth - 1);
+    uint indexLeft = hIndex + (groupHeight + 1) * (i / groupWidth);
+    uint rightStepSize = stepIndex == 0 ? groupHeight - 2 * hIndex : (groupHeight + 1) / 2;
+    uint indexRight = indexLeft + rightStepSize;
+
+	// Exit if out of bounds (for non-power of 2 input sizes)
+    if (indexRight >= numEntries)
+        return;
+
+    uint valueLeft = SpatialHashingInfo[indexLeft].y;
+    uint valueRight = SpatialHashingInfo[indexRight].y;
+
+	// Swap entries if value is descending
+    if (valueLeft > valueRight)
+    {
+        uint2 temp = SpatialHashingInfo[indexLeft];
+        SpatialHashingInfo[indexLeft] = SpatialHashingInfo[indexRight];
+        SpatialHashingInfo[indexRight] = temp;
     }
-    
 }
 
 [numthreads(numOfThreads, 1, 1)]
-void UpdateSpatialHashingIndices(uint3 id : SV_DispatchThreadID)
+void UpdateSpatialHashingIndices(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
 {
-    if (id.x >= (uint) numOfParticles)
-        return;
+    uint particleId = groupID.x * numOfThreads + groupIndex;
     
-    uint particleId = id.x;
+    if (particleId >= (uint) numOfParticles)
+        return;
     
     uint key = SpatialHashingInfo[particleId].y;
     uint beforeKey = MAX_UINT_VALUE;
@@ -124,12 +128,13 @@ void UpdateSpatialHashingIndices(uint3 id : SV_DispatchThreadID)
 }
 
 [numthreads(numOfThreads, 1, 1)]
-void ComputeDensity(uint3 id : SV_DispatchThreadID)
+void ComputeDensity(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
 {
-    if (id.x >= (uint) numOfParticles)
+    uint particleId = groupID.x * numOfThreads + groupIndex;
+    
+    if (particleId >= (uint) numOfParticles)
         return;
     
-    uint particleId = id.x;
     FluidParticleData particle = Particles[particleId];
     //Compute radius * radius to avoid computing square
     float radius2 = smoothingDensityRadius * smoothingDensityRadius;
@@ -168,17 +173,18 @@ void ComputeDensity(uint3 id : SV_DispatchThreadID)
     density = max(density, 0.0001f);
     nearDens = max(nearDens, 0.0001f);
     
-    Particles[id.x].density = density;
-    Particles[id.x].nearDensity = nearDens;
+    Particles[particleId].density = density;
+    Particles[particleId].nearDensity = nearDens;
 }
 
 [numthreads(numOfThreads, 1, 1)]
-void ComputePressure(uint3 id : SV_DispatchThreadID)
+void ComputePressure(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
 {
-    if (id.x >= (uint) numOfParticles)
+    uint particleId = groupID.x * numOfThreads + groupIndex;
+    
+    if (particleId >= (uint) numOfParticles)
         return;
     
-    uint particleId = id.x;
     FluidParticleData particle = Particles[particleId];
     //Compute radius * radius to avoid computing square
     float radius2 = smoothingDensityRadius * smoothingDensityRadius;
@@ -234,12 +240,13 @@ void ComputePressure(uint3 id : SV_DispatchThreadID)
 }
 
 [numthreads(numOfThreads, 1, 1)]
-void ComputeViscosity(uint3 id : SV_DispatchThreadID)
+void ComputeViscosity(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
 {
-    if (id.x >= (uint) numOfParticles)
+    uint particleId = groupID.x * numOfThreads + groupIndex;
+    
+    if (particleId >= (uint) numOfParticles)
         return;
     
-    uint particleId = id.x;
     FluidParticleData particle = Particles[particleId];
     //Compute radius * radius to avoid computing square
     float radius2 = smoothingDensityRadius * smoothingDensityRadius;
@@ -284,12 +291,13 @@ void ComputeViscosity(uint3 id : SV_DispatchThreadID)
 }
 
 [numthreads(numOfThreads, 1, 1)]
-void ApplyForcesAndCollisions(uint3 id : SV_DispatchThreadID)
+void ApplyForcesAndCollisions(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
 {
-    if (id.x >= (uint)numOfParticles)
+    uint particleId = groupID.x * numOfThreads + groupIndex;
+    
+    if (particleId >= (uint) numOfParticles)
         return;
     //Apply Velocity to particles
-    uint particleId = id.x;
     Particles[particleId].position += Particles[particleId].velocity * deltaTime;
     
     float2 particlePosition = Particles[particleId].position;

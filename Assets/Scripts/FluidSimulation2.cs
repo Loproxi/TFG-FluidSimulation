@@ -136,20 +136,44 @@ public class FluidSimulation2 : MonoBehaviour
     void UpdateSimulation(float dt)
     {
         UpdateComputeVariables(dt);
-       
+
         OnDispatchComputeShader(_fluidInitializer.numParticles, updateNextPositionKernel);
         OnDispatchComputeShader(_fluidInitializer.numParticles, updateSpatialHashingInfoKernel);
-        OnDispatchComputeShader(_fluidInitializer.numParticles, sortSpatialHashingInfoKernel);
+        //OnDispatchComputeShader(spatialHashingInfo.count/2, sortSpatialHashingInfoKernel);
+        SortSpatialHashing(); 
         OnDispatchComputeShader(_fluidInitializer.numParticles, updateSpatialHashingIndicesKernel);
         OnDispatchComputeShader(_fluidInitializer.numParticles, computeDensityKernel);
         OnDispatchComputeShader(_fluidInitializer.numParticles, computePressureKernel);
         OnDispatchComputeShader(_fluidInitializer.numParticles, computeViscosityKernel);
         OnDispatchComputeShader(_fluidInitializer.numParticles, externalForcesKernel);
         particles.GetData(_particlesDataArray);
+        //Why density and velocity are infinity 
         uint2[] info = new uint2[_fluidInitializer.numParticles];
         spatialHashingInfo.GetData(info);
-        //Check why spatialHashing info has particleIds Dplicated
-        //Position doesn't change Detect why
+
+    }
+
+    //BitonicSort from Sebastian Lague
+    private void SortSpatialHashing()
+    {
+
+        int numStages = (int)Mathf.Log(Mathf.NextPowerOfTwo(spatialHashingInfo.count), 2);
+
+        for (int stageIndex = 0; stageIndex < numStages; stageIndex++)
+        {
+            for (int stepIndex = 0; stepIndex < stageIndex + 1; stepIndex++)
+            {
+                // Calculate some pattern stuff
+                int groupWidth = 1 << (stageIndex - stepIndex);
+                int groupHeight = 2 * groupWidth - 1;
+                compute.SetInt("groupWidth", groupWidth);
+                compute.SetInt("groupHeight", groupHeight);
+                compute.SetInt("stepIndex", stepIndex);
+                // Run the sorting step on the GPU
+                OnDispatchComputeShader(Mathf.NextPowerOfTwo(spatialHashingInfo.count) / 2, sortSpatialHashingInfoKernel);
+
+            }
+        }
     }
 
     private void UpdateComputeVariables(float dt)
@@ -165,6 +189,7 @@ public class FluidSimulation2 : MonoBehaviour
         compute.SetVector("bounds",new Vector4(_fluidInitializer.minBounds.x, _fluidInitializer.minBounds.y, _fluidInitializer.maxBounds.x, _fluidInitializer.maxBounds.y));
         compute.SetFloat("particleScale", _fluidInitializer.particleScale);
         compute.SetInt("numOfParticles", _fluidInitializer.numParticles);
+        compute.SetInt("numEntries",spatialHashingInfo.count);
     }
 
     private void OnDestroy()
