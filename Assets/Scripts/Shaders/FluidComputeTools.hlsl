@@ -50,57 +50,51 @@ void SelectSurroundingCells(float2 particlePosition, float smoothingRadius, out 
     //Once we have all the keys we can use it to go to the secondary list of indices and iterate for each particle if it is inside of the smoothing radius
 }
 
-float Ver_1_SmoothNearDensityKernel(float radius, float dist)
+float Ver_1_SmoothNearDensityKernel(float radius, float dist,float volume)
 {
     if (dist < radius)
     {
-        float volume = 10 / (PI * pow(radius, 5));
         return (radius - dist) * (radius - dist) * (radius - dist) * volume;
     }
     return 0.0f;
 }
     
-float Derivative_Ver_1_SmoothNearDensityKernel(float radius, float dist)
+float Derivative_Ver_1_SmoothNearDensityKernel(float radius, float dist, float volume)
 {
     if (dist <= radius)
     {
 
-        float volume = 30 / (pow(radius, 5) * PI);
         return -(radius - dist) * (radius - dist) * volume;
 
     }
-    return 0;
+    return 0.0f;
 }
     
-float Ver_2_SmoothDensityKernel(float radius, float dist)
+float Ver_2_SmoothDensityKernel(float radius, float dist, float volume)
 {
     if (dist < radius)
     {
-
-        float volume = 6 / (PI * pow(radius, 4));
         return (radius - dist) * (radius - dist) * volume;
-
     }
-    return 0;
+    return 0.0f;
 }
    //This function returns the slope of the smooth density Kernel V2 
     
-float Derivative_Ver_2_SmoothDensityKernel(float radius, float dist)
+float Derivative_Ver_2_SmoothDensityKernel(float radius, float dist,float volume)
 {
     if (dist <= radius)
     {
 
-        float volume = 12 / (pow(radius, 4) * PI);
         return -(radius - dist) * volume;
 
     }
-    return 0;
+    return 0.0f;
 }
 
-float Ver_3_SmoothDensityKernel(float radius, float dist)
+float Ver_3_SmoothDensityKernel(float radius, float dist,float volume)
 {
-    float volume = PI * pow(radius, 8) / 4;
-    float smoothvalue = max(0, radius * radius - dist * dist);
+
+    float smoothvalue = max(0.0f, radius * radius - dist * dist);
 
     return smoothvalue * smoothvalue * smoothvalue / volume;
 }

@@ -1482,11 +1482,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8cf6666ca1c2a1b418b1c5ea1efb176e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  smoothDensityRadius: 1
+  smoothDensityRadius: 0.471
   restDensity: 5
-  gasConstant: 32
-  collisionDamping: 0.75
-  gravity: -3
+  gasConstant: 7
+  collisionDamping: 0.95
+  gravity: -2.05
   viscosity: 2.4
   particleRendering: {fileID: 2138592031}
   compute: {fileID: 7200000, guid: 046901d5d7875694a9d4d5e19a46e657, type: 3}
@@ -1503,7 +1503,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   positions: []
-  numParticles: 8192
+  numParticles: 4096
   particleScale: 0.75
   minBounds: {x: -25.5, y: -21.3}
   maxBounds: {x: 7.8, y: 0.2}

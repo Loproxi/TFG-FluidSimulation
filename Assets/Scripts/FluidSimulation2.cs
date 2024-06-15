@@ -25,6 +25,7 @@ public struct FluidParticleData
         this.nearDensity = nearDensity;
     }
 }
+
 public class FluidSimulation2 : MonoBehaviour
 {
     [Header("Particle Related")]
@@ -80,7 +81,6 @@ public class FluidSimulation2 : MonoBehaviour
         SetBufferOnKernels(particles,"Particles",updateNextPositionKernel,updateSpatialHashingInfoKernel,computeDensityKernel,computePressureKernel,computeViscosityKernel,externalForcesKernel);
         SetBufferOnKernels(spatialHashingInfo, "SpatialHashingInfo", updateSpatialHashingInfoKernel,sortSpatialHashingInfoKernel, updateSpatialHashingIndicesKernel, computeDensityKernel, computePressureKernel, computeViscosityKernel);
         SetBufferOnKernels(spatialHashingIndices, "SpatialHashingIndices", updateSpatialHashingInfoKernel,updateSpatialHashingIndicesKernel, computeDensityKernel, computePressureKernel, computeViscosityKernel);
-         
 
         particleRendering.SendDataToParticleInstancing(this, _fluidInitializer);
     }
@@ -139,7 +139,7 @@ public class FluidSimulation2 : MonoBehaviour
 
         OnDispatchComputeShader(_fluidInitializer.numParticles, updateNextPositionKernel);
         OnDispatchComputeShader(_fluidInitializer.numParticles, updateSpatialHashingInfoKernel);
-        //OnDispatchComputeShader(spatialHashingInfo.count/2, sortSpatialHashingInfoKernel);
+        OnDispatchComputeShader(spatialHashingInfo.count/2, sortSpatialHashingInfoKernel);
         SortSpatialHashing(); 
         OnDispatchComputeShader(_fluidInitializer.numParticles, updateSpatialHashingIndicesKernel);
         OnDispatchComputeShader(_fluidInitializer.numParticles, computeDensityKernel);
@@ -150,7 +150,8 @@ public class FluidSimulation2 : MonoBehaviour
         //Why density and velocity are infinity 
         uint2[] info = new uint2[_fluidInitializer.numParticles];
         spatialHashingInfo.GetData(info);
-
+        uint[] info2 = new uint[_fluidInitializer.numParticles];
+        spatialHashingIndices.GetData(info2);
     }
 
     //BitonicSort from Sebastian Lague
@@ -189,6 +190,12 @@ public class FluidSimulation2 : MonoBehaviour
         compute.SetVector("bounds",new Vector4(_fluidInitializer.minBounds.x, _fluidInitializer.minBounds.y, _fluidInitializer.maxBounds.x, _fluidInitializer.maxBounds.y));
         compute.SetFloat("particleScale", _fluidInitializer.particleScale);
         compute.SetInt("numOfParticles", _fluidInitializer.numParticles);
+        //I do this here because if this line is done on the .hlsl file density calculations are infinity
+        compute.SetFloat("volumeSmoothDensity1", 10.0f / (Mathf.PI * Mathf.Pow(smoothDensityRadius, 5)));
+        compute.SetFloat("volumeSmoothDensity2", 6.0f / (Mathf.PI * Mathf.Pow(smoothDensityRadius, 4)));
+        compute.SetFloat("volumeSmoothNearPressure1", 30.0f / (Mathf.Pow(smoothDensityRadius, 5.0f) * Mathf.PI));
+        compute.SetFloat("volumeSmoothPressure2", 12.0f / (Mathf.Pow(smoothDensityRadius, 4.0f) * Mathf.PI));
+        compute.SetFloat("volumeSmoothViscosity3", 12.0f / Mathf.PI * Mathf.Pow(smoothDensityRadius, 8.0f) / 4.0f);
         compute.SetInt("numEntries",spatialHashingInfo.count);
     }
 
