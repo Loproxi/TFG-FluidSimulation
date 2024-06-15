@@ -32,6 +32,7 @@ RWStructuredBuffer<uint> SpatialHashingIndices;
 float smoothingDensityRadius;
 float collisionDamping;
 float gasConstant;
+float nearDensityConstant;
 float restDensity;
 float gravity;
 float deltaTime;
@@ -57,12 +58,12 @@ void UpdateNextPositions(uint3 groupID : SV_GroupID,uint groupIndex : SV_GroupIn
 {  
     uint particleId = groupID.x * numOfThreads + groupIndex;
     
-    if (particleId >= (uint) numOfParticles)
-        return;
+    if (particleId >= (uint) numOfParticles) return;
+    
     //Create a deltaTime to predict
     float predictionDeltaTime = 1.0f / 120.0f;
     
-    Particles[particleId].velocity += float2(0.0f, gravity);
+    Particles[particleId].velocity += float2(0.0f, gravity * deltaTime);
     //Predict where the particle is going to be on the next frame
     Particles[particleId].nextPosition = Particles[particleId].position + Particles[particleId].velocity * predictionDeltaTime;
 
@@ -72,8 +73,8 @@ void UpdateNextPositions(uint3 groupID : SV_GroupID,uint groupIndex : SV_GroupIn
 void UpdateSpatialHashingInfo(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
 {
     uint particleId = groupID.x * numOfThreads + groupIndex;
-    if (particleId >= (uint) numOfParticles)
-        return;
+    
+    if (particleId >= (uint) numOfParticles) return;
     
     //Restart All indices by setting all of them to the Max UINT value
     SpatialHashingIndices[particleId].x = MAX_UINT_VALUE;
@@ -97,8 +98,7 @@ void SortSpatialHashingInfo(uint3 id : SV_DispatchThreadID)
     uint indexRight = indexLeft + rightStepSize;
 
 	// Exit if out of bounds (for non-power of 2 input sizes)
-    if (indexRight >= (uint)numEntries)
-        return;
+    if (indexRight >= (uint)numEntries) return;
 
     uint valueLeft = SpatialHashingInfo[indexLeft].y;
     uint valueRight = SpatialHashingInfo[indexRight].y;
@@ -117,8 +117,7 @@ void UpdateSpatialHashingIndices(uint3 groupID : SV_GroupID, uint groupIndex : S
 {
     uint particleId = groupID.x * numOfThreads + groupIndex;
     
-    if (particleId >= (uint) numOfParticles)
-        return;
+    if (particleId >= (uint) numOfParticles) return;
     
     uint key = SpatialHashingInfo[particleId].y;
     uint beforeKey = MAX_UINT_VALUE;
@@ -139,8 +138,7 @@ void ComputeDensity(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
 {
     uint particleId = groupID.x * numOfThreads + groupIndex;
     
-    if (particleId >= (uint) numOfParticles)
-        return;
+    if (particleId >= (uint) numOfParticles) return;
     
     FluidParticleData particle = Particles[particleId];
     //Compute radius * radius to avoid computing square
@@ -190,8 +188,7 @@ void ComputePressure(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex
 {
     uint particleId = groupID.x * numOfThreads + groupIndex;
     
-    if (particleId >= (uint) numOfParticles)
-        return;
+    if (particleId >= (uint) numOfParticles) return;
     
     FluidParticleData particle = Particles[particleId];
     //Compute radius * radius to avoid computing square
@@ -230,7 +227,7 @@ void ComputePressure(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex
                 float slope = Derivative_Ver_2_SmoothDensityKernel(smoothingDensityRadius, dist, volumeSmoothPressure2);
                 float nearSlope = Derivative_Ver_1_SmoothNearDensityKernel(smoothingDensityRadius, dist,volumeSmoothNearPressure1);
                 float pressureBetweenParticles = (ConvertDensityIntoPressure(particle.density, restDensity, gasConstant) + ConvertDensityIntoPressure(Particles[neighbourIndex].density, restDensity, gasConstant)) * 0.5f;
-                float nearPressureBetweenParticles = (ConvertNearDensityIntoPressure(particle.nearDensity, gasConstant) + ConvertNearDensityIntoPressure(Particles[neighbourIndex].nearDensity,gasConstant)) * 0.5f;
+                float nearPressureBetweenParticles = (ConvertNearDensityIntoPressure(particle.nearDensity, nearDensityConstant) + ConvertNearDensityIntoPressure(Particles[neighbourIndex].nearDensity, nearDensityConstant)) * 0.5f;
       
                 pressure += particle.mass * direction * slope * pressureBetweenParticles / Particles[neighbourIndex].density;
                 pressure += direction * nearSlope * nearPressureBetweenParticles / Particles[neighbourIndex].nearDensity;
@@ -252,8 +249,7 @@ void ComputeViscosity(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupInde
 {
     uint particleId = groupID.x * numOfThreads + groupIndex;
     
-    if (particleId >= (uint) numOfParticles)
-        return;
+    if (particleId >= (uint) numOfParticles) return;
     
     FluidParticleData particle = Particles[particleId];
     //Compute radius * radius to avoid computing square
@@ -303,8 +299,7 @@ void ApplyForcesAndCollisions(uint3 groupID : SV_GroupID, uint groupIndex : SV_G
 {
     uint particleId = groupID.x * numOfThreads + groupIndex;
     
-    if (particleId >= (uint) numOfParticles)
-        return;
+    if (particleId >= (uint) numOfParticles) return;
     //Apply Velocity to particles
     Particles[particleId].position += Particles[particleId].velocity * deltaTime;
     

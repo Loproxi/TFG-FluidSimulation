@@ -40,11 +40,11 @@ public class FluidSimulation2 : MonoBehaviour
     private List<IFluidCollider> colliders;
 
     [Header("SPH Simulation Related")]
-    [Range(0.0f, 1.0f)]
+    [Range(0.0f, 5.0f)]
     public float smoothDensityRadius = 1.0f;
     public float restDensity = 1.0f;
     public float gasConstant = 2.0f;
-    private float nearDensityMult = 5.0f;
+    private float nearDensityConst = 5.0f;
     [Range(0.0f, 1.0f)]
     public float collisionDamping = 1.0f;
     public float gravity = -9.81f;
@@ -183,6 +183,7 @@ public class FluidSimulation2 : MonoBehaviour
         compute.SetFloat("smoothingDensityRadius", smoothDensityRadius);
         compute.SetFloat("collisionDamping", collisionDamping);
         compute.SetFloat("gasConstant", gasConstant);
+        compute.SetFloat("nearDensityConstant", nearDensityConst);
         compute.SetFloat("restDensity", restDensity);
         compute.SetFloat("gravity", gravity);
         compute.SetFloat("deltaTime", dt);

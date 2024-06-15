@@ -114,8 +114,8 @@ float ConvertDensityIntoPressure(float density,float restDensity,float gasConsta
     return pressure;
 }
 
-float ConvertNearDensityIntoPressure(float density, float nearDensityMult)
+float ConvertNearDensityIntoPressure(float density, float nearDensityConstant)
 {
-    float pressure = density * nearDensityMult;
+    float pressure = density * nearDensityConstant;
     return pressure;
 }
