@@ -16,6 +16,8 @@ Shader "Custom/Particle"
             #pragma multi_compile_instancing
 
             #include "UnityCG.cginc"
+            #define UNITY_INDIRECT_DRAW_ARGS IndirectDrawIndexedArgs
+            #include "UnityIndirect.cginc"
 
             struct FluidParticleData
             {
@@ -46,14 +48,17 @@ Shader "Custom/Particle"
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
-            //POT ESTAR MALAMENT, COM AGAFO LA INSTANCE ID ?
+
             v2f vert(appdata v, uint instanceID : SV_InstanceID)
             {
                 v2f o;
                 UNITY_SETUP_INSTANCE_ID(v);
+                InitIndirectDrawArgs(0);
+                uint cmdID = GetCommandID(0);
+                uint indirectInstanceID = GetIndirectInstanceID(instanceID);
 
                 // Obtener la posición de la partícula usando el ID de la instancia
-                float2 particlePosition = Particles[instanceID].position;
+                float2 particlePosition = Particles[indirectInstanceID].position;
                 float3 worldPosition = float3(particlePosition, 0.0);
 
                 // Escalar la partícula

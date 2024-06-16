@@ -82,7 +82,7 @@ public class FluidSimulation2 : MonoBehaviour
         SetBufferOnKernels(spatialHashingInfo, "SpatialHashingInfo", updateSpatialHashingInfoKernel,sortSpatialHashingInfoKernel, updateSpatialHashingIndicesKernel, computeDensityKernel, computePressureKernel, computeViscosityKernel);
         SetBufferOnKernels(spatialHashingIndices, "SpatialHashingIndices", updateSpatialHashingInfoKernel,updateSpatialHashingIndicesKernel, computeDensityKernel, computePressureKernel, computeViscosityKernel);
 
-        particleRendering.SendDataToParticleInstancing(this, _fluidInitializer);
+        particleRendering.SendDataToParticleInstancing(particles);
     }
 
     // Update is called once per frame
