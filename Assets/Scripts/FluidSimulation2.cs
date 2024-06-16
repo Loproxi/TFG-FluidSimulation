@@ -51,6 +51,7 @@ public class FluidSimulation2 : MonoBehaviour
     //public GameObject sphere;
     private List<IFluidCollider> colliders;
     private FluidColliderData[] _colliderDataArray;
+    int numOfColliders;
 
     [Header("SPH Simulation Related")]
     [Range(0.0f, 5.0f)]
@@ -130,7 +131,7 @@ public class FluidSimulation2 : MonoBehaviour
             colliders.AddRange(FindObjectsByType<FluidQuadCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None));
             //colliders.AddRange(FindObjectsByType<FluidCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None));
             collidersBuffer = new ComputeBuffer(colliders.Count, 44);
-
+            numOfColliders = colliders.Count;
             _colliderDataArray = new FluidColliderData[colliders.Count];
             SetCollidersData();
         }
@@ -189,6 +190,7 @@ public class FluidSimulation2 : MonoBehaviour
         compute.SetVector("bounds",new Vector4(_fluidInitializer.minBounds.x, _fluidInitializer.minBounds.y, _fluidInitializer.maxBounds.x, _fluidInitializer.maxBounds.y));
         compute.SetFloat("particleScale", _fluidInitializer.particleScale);
         compute.SetInt("numOfParticles", _fluidInitializer.numParticles);
+        compute.SetInt("numOfColliders", numOfColliders);
         //I do this here because if this line is done on the .hlsl file density calculations are infinity
         compute.SetFloat("volumeSmoothDensity1", 10.0f / (Mathf.PI * Mathf.Pow(smoothDensityRadius, 5)));
         compute.SetFloat("volumeSmoothDensity2", 6.0f / (Mathf.PI * Mathf.Pow(smoothDensityRadius, 4)));

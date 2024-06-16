@@ -51,6 +51,7 @@ float viscosity;
 float4 bounds; // MINBOUNDS X, MINBOUNDS Y, MAXBOUNDS X,MAXBOUNDS Y
 float particleScale;
 int numOfParticles;
+int numOfColliders;
 float volumeSmoothNearDensity1;
 float volumeSmoothDensity2;
 float volumeSmoothNearPressure1;
@@ -390,7 +391,7 @@ void ApplyForcesAndCollisions(uint3 groupID : SV_GroupID, uint groupIndex : SV_G
     Particles[particleId].position += Particles[particleId].velocity * deltaTime;
     
     
-    for (int i = 0; i < 1; ++i)
+    for (int i = 0; i < numOfColliders; ++i)
     {
         FluidColliderData collider = Colliders[i];
 
