@@ -21,6 +21,16 @@ struct FluidParticleData
     float nearDensity; // 4
 };
 
+struct FluidColliderData
+{
+    float2 center; //8
+    float radius; //4
+    float2 size; //8
+    float3 rotation; //12
+    float2 scale; //8
+    int type; //4
+};
+
 static const int numOfThreads = 64;
 static const uint MAX_UINT_VALUE = 4294967295;
 
@@ -28,6 +38,7 @@ static const uint MAX_UINT_VALUE = 4294967295;
 RWStructuredBuffer<FluidParticleData> Particles;
 RWStructuredBuffer<uint2> SpatialHashingInfo; // Vector x = particleIndex Vector Y = cellkey
 RWStructuredBuffer<uint> SpatialHashingIndices;
+RWStructuredBuffer<FluidColliderData> Colliders;
 
 float smoothingDensityRadius;
 float collisionDamping;
@@ -301,6 +312,74 @@ void ComputeViscosity(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupInde
     Particles[particleId].velocity += _viscosity * viscosity * deltaTime;
 }
 
+void ResolveQuadCollision(inout FluidParticleData particle, FluidColliderData collider)
+{
+
+    float2 center = collider.center;
+    float particleRadius = particleScale / 2.0f;
+
+    float3 rotation = collider.rotation;
+    float angle = radians(rotation.z);
+    float cosAngle = cos(angle);
+    float sinAngle = sin(angle);
+    
+    float2x2 rotationMatrix = float2x2(cosAngle, -sinAngle, sinAngle, cosAngle);
+    float2x2 invRotationMatrix = float2x2(cosAngle, sinAngle, -sinAngle, cosAngle);
+
+    // Since the axis in local space are aligned with the quad we pass the particles to quad local space
+    // Apply the inv of the rotation to the particles so they are in the same local space  
+    float2 localParticlePosition = mul(invRotationMatrix, (particle.position - center));
+    float2 localParticleVelocity = mul(invRotationMatrix, particle.velocity);
+
+    float2 halfSize = collider.size * 0.5;
+    float2 minSizeLocal = -halfSize;
+    float2 maxSizeLocal = halfSize;
+
+    // Check if the particle is inside the rotated quad in local space
+    if (localParticlePosition.x > minSizeLocal.x - particleRadius && localParticlePosition.x < maxSizeLocal.x + particleRadius &&
+        localParticlePosition.y > minSizeLocal.y - particleRadius && localParticlePosition.y < maxSizeLocal.y + particleRadius)
+    {
+        float2 newVelocity = localParticleVelocity;
+        float2 newPosition = localParticlePosition;
+
+        float4 outDirs = float4(0, 0, 0, 0);
+        outDirs.x = localParticlePosition.x - minSizeLocal.x; // LEFT
+        outDirs.y = maxSizeLocal.x - localParticlePosition.x; // RIGHT
+        outDirs.z = localParticlePosition.y - minSizeLocal.y; // BOTTOM
+        outDirs.w = maxSizeLocal.y - localParticlePosition.y; // TOP
+
+        //Get which side of the quad is the one closer from the particle in order to eject it out of it
+        float outDist = min(min(outDirs.x, outDirs.y), min(outDirs.z, outDirs.w));
+
+        if (outDist == outDirs.x)
+        {
+            newPosition.x = minSizeLocal.x - particleRadius;
+            newVelocity.x = abs(localParticleVelocity.x) * collisionDamping;
+        }
+        else if (outDist == outDirs.y)
+        {
+            newPosition.x = maxSizeLocal.x + particleRadius;
+            newVelocity.x = -abs(localParticleVelocity.x) * collisionDamping;
+        }
+        else if (outDist == outDirs.z)
+        {
+            newPosition.y = minSizeLocal.y - particleRadius;
+            newVelocity.y = abs(localParticleVelocity.y) * collisionDamping;
+        }
+        else if (outDist == outDirs.w)
+        {
+            newPosition.y = maxSizeLocal.y + particleRadius;
+            newVelocity.y = -abs(localParticleVelocity.y) * collisionDamping;
+        }
+
+        //Apply the rotation and Convert it to World Space
+        float2 newVelRotated = mul(rotationMatrix, newVelocity);
+        float2 newPosRotated = mul(rotationMatrix, newPosition);
+        particle.velocity = newVelRotated;
+        particle.position = center + newPosRotated;
+    }
+}
+
 [numthreads(numOfThreads, 1, 1)]
 void ApplyForcesAndCollisions(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
 {
@@ -309,6 +388,18 @@ void ApplyForcesAndCollisions(uint3 groupID : SV_GroupID, uint groupIndex : SV_G
     if (particleId >= (uint) numOfParticles) return;
     //Apply Velocity to particles
     Particles[particleId].position += Particles[particleId].velocity * deltaTime;
+    
+    
+    for (int i = 0; i < 1; ++i)
+    {
+        FluidColliderData collider = Colliders[i];
+
+        if (collider.type == 1)  // Assuming type 1 is for quad colliders
+        {
+            ResolveQuadCollision(Particles[particleId], collider);
+        }
+    }
+    
     
     float2 particlePosition = Particles[particleId].position;
     float2 particleVelocity = Particles[particleId].velocity;
@@ -331,7 +422,7 @@ void ApplyForcesAndCollisions(uint3 groupID : SV_GroupID, uint groupIndex : SV_G
         // Invert Y velocity
         Particles[particleId].velocity = float2(particleVelocity.x, particleVelocity.y * -1 * collisionDamping);
     }
-
     
 }
+
 

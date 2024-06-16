@@ -11,4 +11,5 @@ public interface IFluidCollider
 {
     ColliderType Type { get; }
     void ResolveCollision(ref FluidParticle particle, float particleRadius, float collisionDamping);
+    FluidColliderData GetColliderData();
 }

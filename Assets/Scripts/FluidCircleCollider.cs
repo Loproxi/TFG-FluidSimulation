@@ -1,3 +1,4 @@
+using System.Drawing;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -61,5 +62,15 @@ public class FluidCircleCollider : MonoBehaviour, IFluidCollider
             particle.UpdateVelocity(newVelocity.x, newVelocity.y);
         }
 
+    }
+    public FluidColliderData GetColliderData()
+    {
+        FluidColliderData toReturn = new FluidColliderData();
+
+        toReturn.radius = radius;
+        toReturn.type = (int)Type;
+        toReturn.center = center;
+
+        return toReturn;
     }
 }

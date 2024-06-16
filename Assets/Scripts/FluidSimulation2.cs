@@ -26,6 +26,18 @@ public struct FluidParticleData
     }
 }
 
+[System.Serializable]
+[StructLayout(LayoutKind.Sequential, Size = 44)]
+public struct FluidColliderData
+{
+    public Vector2 center; //8
+    public float radius;   //4
+    public Vector2 size;   //8
+    public Vector3 rotation; //12
+    public Vector2 scale; //8
+    public int type; //4
+}
+
 public class FluidSimulation2 : MonoBehaviour
 {
     [Header("Particle Related")]
@@ -38,6 +50,7 @@ public class FluidSimulation2 : MonoBehaviour
 
     //public GameObject sphere;
     private List<IFluidCollider> colliders;
+    private FluidColliderData[] _colliderDataArray;
 
     [Header("SPH Simulation Related")]
     [Range(0.0f, 5.0f)]
@@ -55,9 +68,10 @@ public class FluidSimulation2 : MonoBehaviour
 
     [Header("Compute Shader Related")]
     public ComputeShader compute;
-    public ComputeBuffer particles;
+    public ComputeBuffer particlesBuffer;
     private ComputeBuffer spatialHashingInfo; // Vector x = particleIndex Vector Y = cellkey
     private ComputeBuffer spatialHashingIndices;
+    private ComputeBuffer collidersBuffer;
 
     //ID REFS TO FUNCTIONS IN COMPUTE
     int updateNextPositionKernel;
@@ -78,11 +92,13 @@ public class FluidSimulation2 : MonoBehaviour
         //Get Kernels ID
         FindKernelsInCompute();
         //Setting buffers to each kernel
-        SetBufferOnKernels(particles,"Particles",updateNextPositionKernel,updateSpatialHashingInfoKernel,computeDensityKernel,computePressureKernel,computeViscosityKernel,externalForcesKernel);
+        SetBufferOnKernels(particlesBuffer,"Particles",updateNextPositionKernel,updateSpatialHashingInfoKernel,computeDensityKernel,computePressureKernel,computeViscosityKernel,externalForcesKernel);
         SetBufferOnKernels(spatialHashingInfo, "SpatialHashingInfo", updateSpatialHashingInfoKernel,sortSpatialHashingInfoKernel, updateSpatialHashingIndicesKernel, computeDensityKernel, computePressureKernel, computeViscosityKernel);
         SetBufferOnKernels(spatialHashingIndices, "SpatialHashingIndices", updateSpatialHashingInfoKernel,updateSpatialHashingIndicesKernel, computeDensityKernel, computePressureKernel, computeViscosityKernel);
+        SetBufferOnKernels(collidersBuffer, "Colliders", externalForcesKernel);
 
-        particleRendering.SendDataToParticleInstancing(particles);
+
+        particleRendering.SendDataToParticleInstancing(particlesBuffer);
     }
 
     // Update is called once per frame
@@ -101,7 +117,7 @@ public class FluidSimulation2 : MonoBehaviour
         if (_fluidInitializer != null)
         {
             //Create Particle Buffer
-            particles = new ComputeBuffer(_fluidInitializer.numParticles, 36);
+            particlesBuffer = new ComputeBuffer(_fluidInitializer.numParticles, 36);
             spatialHashingInfo = new ComputeBuffer(_fluidInitializer.numParticles, 8);
             spatialHashingIndices = new ComputeBuffer(_fluidInitializer.numParticles, 4);
 
@@ -112,8 +128,11 @@ public class FluidSimulation2 : MonoBehaviour
             colliders = new List<IFluidCollider>();
             colliders.AddRange(FindObjectsByType<FluidCircleCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None));
             colliders.AddRange(FindObjectsByType<FluidQuadCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None));
-            colliders.AddRange(FindObjectsByType<FluidCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None));
+            //colliders.AddRange(FindObjectsByType<FluidCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None));
+            collidersBuffer = new ComputeBuffer(colliders.Count, 44);
 
+            _colliderDataArray = new FluidColliderData[colliders.Count];
+            SetCollidersData();
         }
         else
         {
@@ -130,7 +149,7 @@ public class FluidSimulation2 : MonoBehaviour
             _particlesDataArray[i] = new FluidParticleData(_fluidInitializer.positions[i], Vector2.zero);
         }
 
-        particles.SetData(_particlesDataArray);
+        particlesBuffer.SetData(_particlesDataArray);
     }
 
     void UpdateSimulation(float dt)
@@ -146,12 +165,53 @@ public class FluidSimulation2 : MonoBehaviour
         OnDispatchComputeShader(_fluidInitializer.numParticles, computePressureKernel);
         OnDispatchComputeShader(_fluidInitializer.numParticles, computeViscosityKernel);
         OnDispatchComputeShader(_fluidInitializer.numParticles, externalForcesKernel);
-        particles.GetData(_particlesDataArray);
+        particlesBuffer.GetData(_particlesDataArray);
         //Why density and velocity are infinity 
         uint2[] info = new uint2[_fluidInitializer.numParticles];
         spatialHashingInfo.GetData(info);
         uint[] info2 = new uint[_fluidInitializer.numParticles];
         spatialHashingIndices.GetData(info2);
+    }
+
+    
+
+    private void UpdateComputeVariables(float dt)
+    {
+        //Update the simulation Variables each frame
+        compute.SetFloat("smoothingDensityRadius", smoothDensityRadius);
+        compute.SetFloat("collisionDamping", collisionDamping);
+        compute.SetFloat("gasConstant", gasConstant);
+        compute.SetFloat("nearDensityConstant", nearDensityConst);
+        compute.SetFloat("restDensity", restDensity);
+        compute.SetFloat("gravity", gravity);
+        compute.SetFloat("deltaTime", dt);
+        compute.SetFloat("viscosity",viscosity);
+        compute.SetVector("bounds",new Vector4(_fluidInitializer.minBounds.x, _fluidInitializer.minBounds.y, _fluidInitializer.maxBounds.x, _fluidInitializer.maxBounds.y));
+        compute.SetFloat("particleScale", _fluidInitializer.particleScale);
+        compute.SetInt("numOfParticles", _fluidInitializer.numParticles);
+        //I do this here because if this line is done on the .hlsl file density calculations are infinity
+        compute.SetFloat("volumeSmoothDensity1", 10.0f / (Mathf.PI * Mathf.Pow(smoothDensityRadius, 5)));
+        compute.SetFloat("volumeSmoothDensity2", 6.0f / (Mathf.PI * Mathf.Pow(smoothDensityRadius, 4)));
+        compute.SetFloat("volumeSmoothNearPressure1", 30.0f / (Mathf.Pow(smoothDensityRadius, 5.0f) * Mathf.PI));
+        compute.SetFloat("volumeSmoothPressure2", 12.0f / (Mathf.Pow(smoothDensityRadius, 4.0f) * Mathf.PI));
+        compute.SetFloat("volumeSmoothViscosity3", 12.0f / Mathf.PI * Mathf.Pow(smoothDensityRadius, 8.0f) / 4.0f);
+        compute.SetInt("numEntries",spatialHashingInfo.count);
+
+        SetCollidersData();
+    }
+
+    private void OnDestroy()
+    {
+        ReleaseBuffers(particlesBuffer,spatialHashingInfo,spatialHashingIndices);
+    }
+
+    private void SetCollidersData()
+    {
+        for (int i = 0; i < colliders.Count; i++)
+        {
+            _colliderDataArray[i] = colliders[i].GetColliderData();
+        }
+        collidersBuffer.SetData(_colliderDataArray);
     }
 
     //BitonicSort from Sebastian Lague
@@ -175,34 +235,6 @@ public class FluidSimulation2 : MonoBehaviour
 
             }
         }
-    }
-
-    private void UpdateComputeVariables(float dt)
-    {
-        //Update the simulation Variables each frame
-        compute.SetFloat("smoothingDensityRadius", smoothDensityRadius);
-        compute.SetFloat("collisionDamping", collisionDamping);
-        compute.SetFloat("gasConstant", gasConstant);
-        compute.SetFloat("nearDensityConstant", nearDensityConst);
-        compute.SetFloat("restDensity", restDensity);
-        compute.SetFloat("gravity", gravity);
-        compute.SetFloat("deltaTime", dt);
-        compute.SetFloat("viscosity",viscosity);
-        compute.SetVector("bounds",new Vector4(_fluidInitializer.minBounds.x, _fluidInitializer.minBounds.y, _fluidInitializer.maxBounds.x, _fluidInitializer.maxBounds.y));
-        compute.SetFloat("particleScale", _fluidInitializer.particleScale);
-        compute.SetInt("numOfParticles", _fluidInitializer.numParticles);
-        //I do this here because if this line is done on the .hlsl file density calculations are infinity
-        compute.SetFloat("volumeSmoothDensity1", 10.0f / (Mathf.PI * Mathf.Pow(smoothDensityRadius, 5)));
-        compute.SetFloat("volumeSmoothDensity2", 6.0f / (Mathf.PI * Mathf.Pow(smoothDensityRadius, 4)));
-        compute.SetFloat("volumeSmoothNearPressure1", 30.0f / (Mathf.Pow(smoothDensityRadius, 5.0f) * Mathf.PI));
-        compute.SetFloat("volumeSmoothPressure2", 12.0f / (Mathf.Pow(smoothDensityRadius, 4.0f) * Mathf.PI));
-        compute.SetFloat("volumeSmoothViscosity3", 12.0f / Mathf.PI * Mathf.Pow(smoothDensityRadius, 8.0f) / 4.0f);
-        compute.SetInt("numEntries",spatialHashingInfo.count);
-    }
-
-    private void OnDestroy()
-    {
-        ReleaseBuffers(particles,spatialHashingInfo,spatialHashingIndices);
     }
 
     #region ComputeShader

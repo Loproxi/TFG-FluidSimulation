@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
 using UnityEngine;
 
 
@@ -285,6 +286,16 @@ public class FluidCollider : MonoBehaviour,IFluidCollider
         {
             Gizmos.DrawLine(item.start,item.end);
         }
+    }
+
+    public FluidColliderData GetColliderData()
+    {
+        FluidColliderData toReturn = new FluidColliderData();
+
+        toReturn.type = (int)Type;
+        toReturn.center = center;
+
+        return toReturn;
     }
 }
 

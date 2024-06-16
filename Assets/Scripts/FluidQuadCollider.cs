@@ -15,6 +15,12 @@ public class FluidQuadCollider : MonoBehaviour, IFluidCollider
 
     public ColliderType Type => ColliderType.QUAD;
 
+    private void Start()
+    {
+        center = new Vector2(transform.position.x, transform.position.y);
+        size = new Vector2(transform.localScale.x, transform.localScale.y);
+        rotation = transform.rotation.eulerAngles;
+    }
     private void Update()
     {
         center = new Vector2(transform.position.x, transform.position.y);
@@ -90,4 +96,16 @@ public class FluidQuadCollider : MonoBehaviour, IFluidCollider
             newVelocity.y = -Mathf.Abs(localParticleVelocity.y) * collisionDamping;
         }
     }
+
+    public FluidColliderData GetColliderData()
+    {
+        FluidColliderData toReturn = new FluidColliderData();
+
+        toReturn.size = size;
+        toReturn.type = (int)Type;
+        toReturn.center = center;
+
+        return toReturn;
+    }
+
 }
