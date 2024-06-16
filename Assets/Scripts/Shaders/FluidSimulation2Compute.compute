@@ -150,6 +150,11 @@ void ComputeDensity(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
     
     SelectSurroundingCells(particle.nextPosition, smoothingDensityRadius, nearCells);
 
+    float ownInfluence = Ver_2_SmoothDensityKernel(smoothingDensityRadius, 0.0f, volumeSmoothDensity2); // dist = 0
+    float ownNearInfluence = Ver_1_SmoothNearDensityKernel(smoothingDensityRadius, 0.0f, volumeSmoothNearDensity1); // dist = 0
+    density += particle.mass * ownInfluence;
+    nearDens += particle.mass * ownNearInfluence;
+    
     for (int i = 0; i < nearCellsSize; i++)
     {
         uint key = GetKeyFromHashedCell(HashingCell(nearCells[i]),numOfParticles);
@@ -159,19 +164,22 @@ void ComputeDensity(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
         {
 
             uint neighbourIndex = SpatialHashingInfo[index].x;
-
-            float2 particleToOther = Particles[neighbourIndex].nextPosition - Particles[particleId].nextPosition;
-            float sqrDistFromCenterToNeighbour = dot(particleToOther, particleToOther);
-
-            if (sqrDistFromCenterToNeighbour <= radius2)
+            
+            if(neighbourIndex != particleId)
             {
-                float dist = sqrt(sqrDistFromCenterToNeighbour);
-                float influence = Ver_2_SmoothDensityKernel(smoothingDensityRadius, dist,volumeSmoothDensity2);
-                float nearInfluence = Ver_1_SmoothNearDensityKernel(smoothingDensityRadius, dist,volumeSmoothNearDensity1);
+                float2 particleToOther = Particles[neighbourIndex].nextPosition - Particles[particleId].nextPosition;
+                float sqrDistFromCenterToNeighbour = dot(particleToOther, particleToOther);
+
+                if (sqrDistFromCenterToNeighbour <= radius2)
+                {
+                    float dist = sqrt(sqrDistFromCenterToNeighbour);
+                    float influence = Ver_2_SmoothDensityKernel(smoothingDensityRadius, dist, volumeSmoothDensity2);
+                    float nearInfluence = Ver_1_SmoothNearDensityKernel(smoothingDensityRadius, dist, volumeSmoothNearDensity1);
                 
-                density += Particles[particleId].mass * influence;
-                nearDens += Particles[particleId].mass * nearInfluence;           
+                    density += Particles[particleId].mass * influence;
+                    nearDens += Particles[particleId].mass * nearInfluence;
                 
+                }
             }
             index++;
         }
@@ -220,17 +228,16 @@ void ComputePressure(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex
 
             if (sqrDistFromCenterToNeighbour <= radius2)
             {
-
                 
                 float dist = sqrt(sqrDistFromCenterToNeighbour);
                 float2 direction = dist > 0 ? particleToOther / dist : float2(0, 1);
                 float slope = Derivative_Ver_2_SmoothDensityKernel(smoothingDensityRadius, dist, volumeSmoothPressure2);
-                float nearSlope = Derivative_Ver_1_SmoothNearDensityKernel(smoothingDensityRadius, dist,volumeSmoothNearPressure1);
+                //float nearSlope = Derivative_Ver_1_SmoothNearDensityKernel(smoothingDensityRadius, dist,volumeSmoothNearPressure1);
                 float pressureBetweenParticles = (ConvertDensityIntoPressure(particle.density, restDensity, gasConstant) + ConvertDensityIntoPressure(Particles[neighbourIndex].density, restDensity, gasConstant)) * 0.5f;
-                float nearPressureBetweenParticles = (ConvertNearDensityIntoPressure(particle.nearDensity, nearDensityConstant) + ConvertNearDensityIntoPressure(Particles[neighbourIndex].nearDensity, nearDensityConstant)) * 0.5f;
+                //float nearPressureBetweenParticles = (ConvertNearDensityIntoPressure(particle.nearDensity, nearDensityConstant) + ConvertNearDensityIntoPressure(Particles[neighbourIndex].nearDensity, nearDensityConstant)) * 0.5f;
       
                 pressure += particle.mass * direction * slope * pressureBetweenParticles / Particles[neighbourIndex].density;
-                pressure += direction * nearSlope * nearPressureBetweenParticles / Particles[neighbourIndex].nearDensity;
+                //pressure += direction * nearSlope * nearPressureBetweenParticles / Particles[neighbourIndex].nearDensity;
                 
             }
             index++;
