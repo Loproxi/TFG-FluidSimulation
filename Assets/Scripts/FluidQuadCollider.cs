@@ -104,6 +104,7 @@ public class FluidQuadCollider : MonoBehaviour, IFluidCollider
         toReturn.size = size;
         toReturn.type = (int)Type;
         toReturn.center = center;
+        toReturn.rotation = rotation;
 
         return toReturn;
     }

@@ -49,7 +49,7 @@ float gravity;
 float deltaTime;
 float viscosity;
 float4 bounds; // MINBOUNDS X, MINBOUNDS Y, MAXBOUNDS X,MAXBOUNDS Y
-float particleScale;
+float particleRadius;
 int numOfParticles;
 int numOfColliders;
 float volumeSmoothNearDensity1;
@@ -317,7 +317,6 @@ void ResolveQuadCollision(inout FluidParticleData particle, FluidColliderData co
 {
 
     float2 center = collider.center;
-    float particleRadius = particleScale / 2.0f;
 
     float3 rotation = collider.rotation;
     float angle = radians(rotation.z);
@@ -381,6 +380,26 @@ void ResolveQuadCollision(inout FluidParticleData particle, FluidColliderData co
     }
 }
 
+void ResolveCircleCollision(inout FluidParticleData particle, FluidColliderData collider)
+{
+    float2 particlePosition = particle.position;
+    float2 particleVelocity = particle.velocity;
+
+    float2 dir = particlePosition - collider.center;
+    float distance = length(dir);
+    float2 totalDisplacement = float2(0.0f,0.0f);
+
+    if (distance < collider.radius + particleRadius)
+    {
+        dir = normalize(dir);
+        float2 newPosition = collider.center + dir * (collider.radius + particleRadius);
+        float2 newVelocity = particleVelocity - 2 * dot(particleVelocity, dir) * dir * collisionDamping;
+
+        particle.position = newPosition;
+        particle.velocity = newVelocity;
+    }
+}
+
 [numthreads(numOfThreads, 1, 1)]
 void ApplyForcesAndCollisions(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
 {
@@ -394,8 +413,12 @@ void ApplyForcesAndCollisions(uint3 groupID : SV_GroupID, uint groupIndex : SV_G
     for (int i = 0; i < numOfColliders; ++i)
     {
         FluidColliderData collider = Colliders[i];
-
-        if (collider.type == 1)  // Assuming type 1 is for quad colliders
+        
+        if (collider.type == 0)  // type 0 is for circle colliders
+        {
+            ResolveCircleCollision(Particles[particleId], collider);
+        }
+        else if (collider.type == 1)  // type 1 is for quad colliders
         {
             ResolveQuadCollision(Particles[particleId], collider);
         }
@@ -405,7 +428,7 @@ void ApplyForcesAndCollisions(uint3 groupID : SV_GroupID, uint groupIndex : SV_G
     float2 particlePosition = Particles[particleId].position;
     float2 particleVelocity = Particles[particleId].velocity;
 
-    float2 particleSize = float2(1.0f,1.0f) * particleScale;
+    float2 particleSize = float2(1.0f, 1.0f) * particleRadius;
 
     Particles[particleId].position = float2(clamp(particlePosition.x, bounds.x + particleSize.x, bounds.z - particleSize.x),
                                 clamp(particlePosition.y, bounds.y + particleSize.y, bounds.w - particleSize.y));

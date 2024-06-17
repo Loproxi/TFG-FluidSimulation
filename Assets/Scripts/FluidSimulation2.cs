@@ -45,7 +45,7 @@ public class FluidSimulation2 : MonoBehaviour
     private FluidParticleData[] _particlesDataArray;
     private FluidInitializer _fluidInitializer;
 
-    private SP_Tile tile;
+    private float particleRadius = 0.0f;
     private float deltaTime = 0.0f;
 
     //public GameObject sphere;
@@ -124,8 +124,6 @@ public class FluidSimulation2 : MonoBehaviour
 
             _fluidInitializer.InitializeParticles();
             SpawnParticles();
-            tile = new SP_Tile();
-            compactHashing = new CompactHashing(_fluidInitializer.numParticles, tile.width, tile.height);
             colliders = new List<IFluidCollider>();
             colliders.AddRange(FindObjectsByType<FluidCircleCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None));
             colliders.AddRange(FindObjectsByType<FluidQuadCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None));
@@ -166,18 +164,14 @@ public class FluidSimulation2 : MonoBehaviour
         OnDispatchComputeShader(_fluidInitializer.numParticles, computePressureKernel);
         OnDispatchComputeShader(_fluidInitializer.numParticles, computeViscosityKernel);
         OnDispatchComputeShader(_fluidInitializer.numParticles, externalForcesKernel);
-        particlesBuffer.GetData(_particlesDataArray);
-        //Why density and velocity are infinity 
-        uint2[] info = new uint2[_fluidInitializer.numParticles];
-        spatialHashingInfo.GetData(info);
-        uint[] info2 = new uint[_fluidInitializer.numParticles];
-        spatialHashingIndices.GetData(info2);
+
     }
 
     
 
     private void UpdateComputeVariables(float dt)
     {
+        particleRadius = _fluidInitializer.particleScale/2;
         //Update the simulation Variables each frame
         compute.SetFloat("smoothingDensityRadius", smoothDensityRadius);
         compute.SetFloat("collisionDamping", collisionDamping);
@@ -188,7 +182,7 @@ public class FluidSimulation2 : MonoBehaviour
         compute.SetFloat("deltaTime", dt);
         compute.SetFloat("viscosity",viscosity);
         compute.SetVector("bounds",new Vector4(_fluidInitializer.minBounds.x, _fluidInitializer.minBounds.y, _fluidInitializer.maxBounds.x, _fluidInitializer.maxBounds.y));
-        compute.SetFloat("particleScale", _fluidInitializer.particleScale);
+        compute.SetFloat("particleRadius", particleRadius);
         compute.SetInt("numOfParticles", _fluidInitializer.numParticles);
         compute.SetInt("numOfColliders", numOfColliders);
         //I do this here because if this line is done on the .hlsl file density calculations are infinity
@@ -204,7 +198,7 @@ public class FluidSimulation2 : MonoBehaviour
 
     private void OnDestroy()
     {
-        ReleaseBuffers(particlesBuffer,spatialHashingInfo,spatialHashingIndices);
+        ReleaseBuffers(particlesBuffer,spatialHashingInfo,spatialHashingIndices,collidersBuffer);
     }
 
     private void SetCollidersData()
