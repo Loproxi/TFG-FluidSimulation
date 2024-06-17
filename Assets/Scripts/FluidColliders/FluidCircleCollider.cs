@@ -31,38 +31,38 @@ public class FluidCircleCollider : MonoBehaviour, IFluidCollider
         radius = transform.localScale.x/2;
     }
 
-    public void ResolveCollision(ref FluidParticle particle, float particleRadius,float collisionDamping)
-    {
+    //public void ResolveCollision(ref FluidParticle particle, float particleRadius,float collisionDamping)
+    //{
 
-        Vector2 particlePosition = particle.position;
-        Vector2 particleVelocity = particle.velocity;
+    //    Vector2 particlePosition = particle.position;
+    //    Vector2 particleVelocity = particle.velocity;
 
-        Vector2 dir = particlePosition - center;
-        float distance = dir.magnitude;
-        Vector2 totalDisplacement = Vector2.zero;
+    //    Vector2 dir = particlePosition - center;
+    //    float distance = dir.magnitude;
+    //    Vector2 totalDisplacement = Vector2.zero;
 
-        if (distance < radius)
-        {
-            dir.Normalize();
+    //    if (distance < radius)
+    //    {
+    //        dir.Normalize();
 
-            Vector2 newPosition = center + dir * (radius + particleRadius);
+    //        Vector2 newPosition = center + dir * (radius + particleRadius);
 
-            Vector2 newVelocity = particleVelocity - 2 * Vector2.Dot(particleVelocity, dir) * dir * collisionDamping;
+    //        Vector2 newVelocity = particleVelocity - 2 * Vector2.Dot(particleVelocity, dir) * dir * collisionDamping;
 
-            particle.UpdatePosition(newPosition);
-            particle.UpdateVelocity(newVelocity.x, newVelocity.y);
-        }
-        else if (distance < radius + particleRadius)
-        {
-            dir.Normalize();
-            Vector2 newPosition = center + dir * (radius + particleRadius);
-            Vector2 newVelocity = particleVelocity - 2 * Vector2.Dot(particleVelocity, dir) * dir * collisionDamping;
+    //        particle.UpdatePosition(newPosition);
+    //        particle.UpdateVelocity(newVelocity.x, newVelocity.y);
+    //    }
+    //    else if (distance < radius + particleRadius)
+    //    {
+    //        dir.Normalize();
+    //        Vector2 newPosition = center + dir * (radius + particleRadius);
+    //        Vector2 newVelocity = particleVelocity - 2 * Vector2.Dot(particleVelocity, dir) * dir * collisionDamping;
 
-            particle.UpdatePosition(newPosition);
-            particle.UpdateVelocity(newVelocity.x, newVelocity.y);
-        }
+    //        particle.UpdatePosition(newPosition);
+    //        particle.UpdateVelocity(newVelocity.x, newVelocity.y);
+    //    }
 
-    }
+    //}
     public FluidColliderData GetColliderData()
     {
         FluidColliderData toReturn = new FluidColliderData();
