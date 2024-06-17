@@ -58,12 +58,11 @@ public class FluidSimulation2 : MonoBehaviour
     public float smoothDensityRadius = 1.0f;
     public float restDensity = 1.0f;
     public float gasConstant = 2.0f;
-    private float nearDensityConst = 5.0f;
+    public float nearDensityConst = 5.0f;
     [Range(0.0f, 1.0f)]
     public float collisionDamping = 1.0f;
     public float gravity = -9.81f;
     public float viscosity = 0.0f;
-    private CompactHashing compactHashing;
 
     public ParticleRendering particleRendering;
 
@@ -127,7 +126,6 @@ public class FluidSimulation2 : MonoBehaviour
             colliders = new List<IFluidCollider>();
             colliders.AddRange(FindObjectsByType<FluidCircleCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None));
             colliders.AddRange(FindObjectsByType<FluidQuadCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None));
-            //colliders.AddRange(FindObjectsByType<FluidCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None));
             collidersBuffer = new ComputeBuffer(colliders.Count, 44);
             numOfColliders = colliders.Count;
             _colliderDataArray = new FluidColliderData[colliders.Count];
@@ -153,6 +151,7 @@ public class FluidSimulation2 : MonoBehaviour
 
     void UpdateSimulation(float dt)
     {
+
         UpdateComputeVariables(dt);
 
         OnDispatchComputeShader(_fluidInitializer.numParticles, updateNextPositionKernel);
@@ -166,8 +165,6 @@ public class FluidSimulation2 : MonoBehaviour
         OnDispatchComputeShader(_fluidInitializer.numParticles, externalForcesKernel);
 
     }
-
-    
 
     private void UpdateComputeVariables(float dt)
     {

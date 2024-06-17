@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2015473104711559384
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1238351331525839291}
+  - component: {fileID: 5957997542931381931}
+  - component: {fileID: 1160300760031841715}
+  m_Layer: 0
+  m_Name: FluidSimulation
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1238351331525839291
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2015473104711559384}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: -0.3480231}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5957997542931381931
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2015473104711559384}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b65677ac1207024088b468a6322e3b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  positions: []
+  numParticles: 12000
+  particleScale: 0.35
+  minBounds: {x: -38.9, y: -21.3}
+  maxBounds: {x: 33.1, y: 21.61}
+--- !u!114 &1160300760031841715
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2015473104711559384}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8cf6666ca1c2a1b418b1c5ea1efb176e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  smoothDensityRadius: 0.66
+  restDensity: 5
+  gasConstant: 32
+  nearDensityConst: 5
+  collisionDamping: 0.75
+  gravity: -3
+  viscosity: 1.2
+  particleRendering: {fileID: 0}
+  compute: {fileID: 7200000, guid: 046901d5d7875694a9d4d5e19a46e657, type: 3}

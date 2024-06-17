@@ -171,7 +171,7 @@ void ComputeDensity(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
     {
         uint key = GetKeyFromHashedCell(HashingCell(nearCells[i]),numOfParticles);
         uint index = SpatialHashingIndices[key];
-                        //POT ESTAR MALAMENT
+
         while (index < (uint)numOfParticles && SpatialHashingInfo[index].y == key)
         {
 
@@ -223,7 +223,7 @@ void ComputePressure(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex
     {
         uint key = GetKeyFromHashedCell(HashingCell(nearCells[i]), numOfParticles);
         uint index = SpatialHashingIndices[key];
-                        //POT ESTAR MALAMENT
+
         while (index < (uint)numOfParticles && SpatialHashingInfo[index].y == key)
         {
 
@@ -242,14 +242,17 @@ void ComputePressure(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex
             {
                 
                 float dist = sqrt(sqrDistFromCenterToNeighbour);
+                //In which direction the particle will go
                 float2 direction = dist > 0 ? particleToOther / dist : float2(0, 1);
+                //How rapidly this particle will move
                 float slope = Derivative_Ver_2_SmoothDensityKernel(smoothingDensityRadius, dist, volumeSmoothPressure2);
-                //float nearSlope = Derivative_Ver_1_SmoothNearDensityKernel(smoothingDensityRadius, dist,volumeSmoothNearPressure1);
+                float nearSlope = Derivative_Ver_1_SmoothNearDensityKernel(smoothingDensityRadius, dist,volumeSmoothNearPressure1);
+                //Apply the force to both particles
                 float pressureBetweenParticles = (ConvertDensityIntoPressure(particle.density, restDensity, gasConstant) + ConvertDensityIntoPressure(Particles[neighbourIndex].density, restDensity, gasConstant)) * 0.5f;
-                //float nearPressureBetweenParticles = (ConvertNearDensityIntoPressure(particle.nearDensity, nearDensityConstant) + ConvertNearDensityIntoPressure(Particles[neighbourIndex].nearDensity, nearDensityConstant)) * 0.5f;
+                float nearPressureBetweenParticles = (ConvertNearDensityIntoPressure(particle.nearDensity, nearDensityConstant) + ConvertNearDensityIntoPressure(Particles[neighbourIndex].nearDensity, nearDensityConstant)) * 0.5f;
       
                 pressure += particle.mass * direction * slope * pressureBetweenParticles / Particles[neighbourIndex].density;
-                //pressure += direction * nearSlope * nearPressureBetweenParticles / Particles[neighbourIndex].nearDensity;
+                pressure += direction * nearSlope * nearPressureBetweenParticles / Particles[neighbourIndex].nearDensity;
                 
             }
             index++;
@@ -283,7 +286,7 @@ void ComputeViscosity(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupInde
     {
         uint key = GetKeyFromHashedCell(HashingCell(nearCells[i]), numOfParticles);
         uint index = SpatialHashingIndices[key];
-                        //POT ESTAR MALAMENT
+
         while (index < (uint) numOfParticles && SpatialHashingInfo[index].y == key)
         {
 

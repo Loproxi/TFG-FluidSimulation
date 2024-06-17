@@ -87,8 +87,7 @@ public class FluidSimulation : MonoBehaviour
             colliders = new List<IFluidCollider>();
             colliders.AddRange(FindObjectsByType<FluidCircleCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None));
             colliders.AddRange(FindObjectsByType<FluidQuadCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None));
-            colliders.AddRange(FindObjectsByType<FluidCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None));
-
+            
         }
         else
         {
