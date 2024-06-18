@@ -64,7 +64,7 @@ public class FluidSimulation2 : MonoBehaviour
     public float gravity = -9.81f;
     public float viscosity = 0.0f;
 
-    public ParticleRendering particleRendering;
+    private ParticleRendering particleRendering;
 
     [Header("Compute Shader Related")]
     public ComputeShader compute;
@@ -97,7 +97,7 @@ public class FluidSimulation2 : MonoBehaviour
         SetBufferOnKernels(spatialHashingIndices, "SpatialHashingIndices", updateSpatialHashingInfoKernel,updateSpatialHashingIndicesKernel, computeDensityKernel, computePressureKernel, computeViscosityKernel);
         SetBufferOnKernels(collidersBuffer, "Colliders", externalForcesKernel);
 
-
+        particleRendering = gameObject.GetComponent<ParticleRendering>();
         particleRendering.SendDataToParticleInstancing(particlesBuffer);
     }
 

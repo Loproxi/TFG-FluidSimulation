@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 1238351331525839291}
   - component: {fileID: 5957997542931381931}
   - component: {fileID: 1160300760031841715}
+  - component: {fileID: 2041832351081880815}
   m_Layer: 0
   m_Name: FluidSimulation
   m_TagString: Untagged
@@ -71,3 +72,19 @@ MonoBehaviour:
   viscosity: 1.2
   particleRendering: {fileID: 0}
   compute: {fileID: 7200000, guid: 046901d5d7875694a9d4d5e19a46e657, type: 3}
+--- !u!114 &2041832351081880815
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2015473104711559384}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99047dff115327848b7fd36031a1fc7e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  particleInstancingShader: {fileID: 4800000, guid: 4099fbc2852892c4b8f3dd91c97fc3ba, type: 3}
+  scale: 0.35
+  color: {r: 0, g: 0.03999734, b: 1, a: 0}

@@ -5,7 +5,7 @@ using UnityEngine;
 public class FluidInitializer : MonoBehaviour
 {
     [Header("Particle Init Settings")]
-    public Vector2[] positions;
+    [HideInInspector] public Vector2[] positions;
     public int numParticles = 100;
     public float particleScale = 0.25f;
 
