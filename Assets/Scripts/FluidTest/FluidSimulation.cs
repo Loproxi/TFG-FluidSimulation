@@ -391,7 +391,7 @@ public class FluidSimulation : MonoBehaviour
 
         foreach (var collider in colliders)
         {
-            collider.ResolveCollision(ref _particles[particleIndex], _fluidInitializer.particleScale / 2, collisionDamping);
+            //collider.ResolveCollision(ref _particles[particleIndex], _fluidInitializer.particleScale / 2, collisionDamping);
         }
 
     }
