@@ -27,16 +27,47 @@
     2. Go to Assets > Import Package > Custom Package.
     3. Select the downloaded package and click Import.
 ## 3. Initial Setup
-### 3.1 Adding the Fluid to the Scene
--  How to add the main fluid simulation component to a scene:
-  1.  Create a new empty GameObject or select an existing one.
-Add the FluidSimulation2D script to the GameObject (Add Component > FluidSimulation2D).
-### 3.2 Component Configuration
-Explanation of the main properties of the component:
-Resolution: Defines the resolution of the simulation.
-Viscosity: Controls the fluid's viscosity.
-Diffusion Rate: Controls the fluid's diffusion rate.
-Gravity: Adjusts the gravity affecting the fluid.
+### 3.1 Adding the Fluid Simulation to the Scene
+-  How to add the main fluid simulation package/Tool to a Scene:
+  1.  Add the `FluidSimulation` prefab from the Assets to the Scene.
+-  How to adjust the Prefab with the needed information:
+  2.  After clicking on it you will have to set some things in order for it to work.
+- Required Shaders
+    - The Compute shader `FluidSimulation2Compute` 
+    - The Particle Instancing Shader `Custom/Particle`
+  
+![ComponentsInFluidSimulationPrefab](https://github.com/Loproxi/TFG-FluidSimulation/assets/79161178/0b44a65f-2ff4-4aae-b00d-beea4c4bb030)
+
+In the package, you will find two fluid simulation scripts. One works with a compute shader, and the other does not. I personally recommend using the one with the compute shader because it can handle more particles. However, it can only be used once per scene. I am not sure why; it might be related to synchronization problems due to multiple compute shaders working simultaneously. For this reason, I provide two options. The other script can be used multiple times within the same scene.
+
+### 3.2 Tool Configuration
+- This section explains the purpose of each variable and component.
+#### 3.2.1 Fluid Initializer
+- This script component is responsible for setting the number of particles, the domain bounds of the simulation, the particle scale and generating the positions of each particle within the domain.
+    - The variables in detail are
+        - `Num Particles`: Specifies the total number of particles in the simulation.
+        - `Particle Scale`: Defines the scale of each particle
+        - `Min Bounds`: Defines the upper-left vertex of the domain quad.
+        - `Max Bounds`: Defines the bottom-right vertex of the domain quad.
+#### 3.2.2 Fluid Simulation 
+- This script component is responsible for adjusting variables to tailor the fluid behavior to your requirements.
+    - The variables in detail are
+        - `Smoothing Radius`: The radius used for smoothing calculations in the simulation.
+        - `Rest Density`: The target density that particles are trying to achieve (higher values cause particles to be closer together).
+        - `Fluid Constant`: A multiplier for each density calculation (higher values cause particles to spread).
+        - `Near Density Const`: Increases density when particles are on top of each other.
+        - `Collision Damping`: Reduces the velocity of particles after they collide with a wall.
+        - `Gravity`: The gravitational force affecting the fluid.
+        - `Viscosity`: Controls how viscous (slimy) the fluid is.
+        - `Compute`: Reference to the compute shader used for the simulation.
+#### 3.2.3 Particle Rendering
+- This script component is responsible for setting the looks of the particles.
+    - The variables in detail are
+        - `Mesh`: Specifies the total number of particles in the simulation.
+        - `Particle Instancing Shader`: Defines the scale of each particle
+        - `Particle Scale`: Defines the upper-left vertex of the domain quad.
+        - `Particle Color`: Defines the upper-left vertex of the domain quad.
+
 ## 4. Basic Usage
 ### 4.1 Creating a Fluid Source
 How to add fluid sources to the environment:
