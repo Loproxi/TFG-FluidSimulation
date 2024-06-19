@@ -6,6 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/ComputeShaderScene.unity
+    path: Assets/FluidSimulation/ComputeShaderScene.unity
     guid: a4e2c94bd426a3d4baebb2f88e687d95
   m_configObjects: {}

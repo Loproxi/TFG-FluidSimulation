@@ -1139,7 +1139,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   fluidParticle: {fileID: 1301275780}
   velocities: []
-  smoothDensityRadius: 0.4
+  smoothDensityRadius: 1
   restDensity: 5
   gasConstant: 32
   collisionDamping: 0.75

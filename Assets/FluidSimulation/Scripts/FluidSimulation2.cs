@@ -55,9 +55,9 @@ public class FluidSimulation2 : MonoBehaviour
 
     [Header("SPH Simulation Related")]
     [Range(0.0f, 5.0f)]
-    public float smoothDensityRadius = 1.0f;
+    public float smoothingDensityRadius = 1.0f;
     public float restDensity = 1.0f;
-    public float gasConstant = 2.0f;
+    public float fluidConstant = 2.0f;
     public float nearDensityConst = 5.0f;
     [Range(0.0f, 1.0f)]
     public float collisionDamping = 1.0f;
@@ -170,9 +170,9 @@ public class FluidSimulation2 : MonoBehaviour
     {
         particleRadius = _fluidInitializer.particleScale/2;
         //Update the simulation Variables each frame
-        compute.SetFloat("smoothingDensityRadius", smoothDensityRadius);
+        compute.SetFloat("smoothingDensityRadius", smoothingDensityRadius);
         compute.SetFloat("collisionDamping", collisionDamping);
-        compute.SetFloat("gasConstant", gasConstant);
+        compute.SetFloat("gasConstant", fluidConstant);
         compute.SetFloat("nearDensityConstant", nearDensityConst);
         compute.SetFloat("restDensity", restDensity);
         compute.SetFloat("gravity", gravity);
@@ -183,11 +183,11 @@ public class FluidSimulation2 : MonoBehaviour
         compute.SetInt("numOfParticles", _fluidInitializer.numParticles);
         compute.SetInt("numOfColliders", numOfColliders);
         //I do this here because if this line is done on the .hlsl file density calculations are infinity
-        compute.SetFloat("volumeSmoothDensity1", 10.0f / (Mathf.PI * Mathf.Pow(smoothDensityRadius, 5)));
-        compute.SetFloat("volumeSmoothDensity2", 6.0f / (Mathf.PI * Mathf.Pow(smoothDensityRadius, 4)));
-        compute.SetFloat("volumeSmoothNearPressure1", 30.0f / (Mathf.Pow(smoothDensityRadius, 5.0f) * Mathf.PI));
-        compute.SetFloat("volumeSmoothPressure2", 12.0f / (Mathf.Pow(smoothDensityRadius, 4.0f) * Mathf.PI));
-        compute.SetFloat("volumeSmoothViscosity3", 12.0f / Mathf.PI * Mathf.Pow(smoothDensityRadius, 8.0f) / 4.0f);
+        compute.SetFloat("volumeSmoothDensity1", 10.0f / (Mathf.PI * Mathf.Pow(smoothingDensityRadius, 5)));
+        compute.SetFloat("volumeSmoothDensity2", 6.0f / (Mathf.PI * Mathf.Pow(smoothingDensityRadius, 4)));
+        compute.SetFloat("volumeSmoothNearPressure1", 30.0f / (Mathf.Pow(smoothingDensityRadius, 5.0f) * Mathf.PI));
+        compute.SetFloat("volumeSmoothPressure2", 12.0f / (Mathf.Pow(smoothingDensityRadius, 4.0f) * Mathf.PI));
+        compute.SetFloat("volumeSmoothViscosity3", 12.0f / Mathf.PI * Mathf.Pow(smoothingDensityRadius, 8.0f) / 4.0f);
         compute.SetInt("numEntries",spatialHashingInfo.count);
 
         SetCollidersData();
