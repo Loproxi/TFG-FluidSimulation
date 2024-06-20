@@ -125,8 +125,8 @@ public class FluidSimulation2 : MonoBehaviour
             _fluidInitializer.InitializeParticles();
             SpawnParticles();
             colliders = new List<IFluidCollider>();
-            colliders.AddRange(FindObjectsByType<FluidCircleCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None));
-            colliders.AddRange(FindObjectsByType<FluidQuadCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None));
+            colliders.AddRange(FindObjectsOfType<FluidCircleCollider>(false));
+            colliders.AddRange(FindObjectsOfType<FluidQuadCollider>(false));
             numOfColliders = colliders.Count;
             if (numOfColliders > 0)
             {
