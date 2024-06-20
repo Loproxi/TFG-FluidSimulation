@@ -412,22 +412,23 @@ void ApplyForcesAndCollisions(uint3 groupID : SV_GroupID, uint groupIndex : SV_G
     //Apply Velocity to particles
     Particles[particleId].position += Particles[particleId].velocity * deltaTime;
     
-    
-    for (int i = 0; i < numOfColliders; ++i)
+    if (numOfColliders != 0)
     {
-        FluidColliderData collider = Colliders[i];
+        for (int i = 0; i < numOfColliders; ++i)
+        {
+            FluidColliderData collider = Colliders[i];
         
-        if (collider.type == 0)  // type 0 is for circle colliders
-        {
-            ResolveCircleCollision(Particles[particleId], collider);
-        }
-        else if (collider.type == 1)  // type 1 is for quad colliders
-        {
-            ResolveQuadCollision(Particles[particleId], collider);
+            if (collider.type == 0)  // type 0 is for circle colliders
+            {
+                ResolveCircleCollision(Particles[particleId], collider);
+            }
+            else if (collider.type == 1)  // type 1 is for quad colliders
+            {
+                ResolveQuadCollision(Particles[particleId], collider);
+            }
         }
     }
-    
-    
+     
     float2 particlePosition = Particles[particleId].position;
     float2 particleVelocity = Particles[particleId].velocity;
 

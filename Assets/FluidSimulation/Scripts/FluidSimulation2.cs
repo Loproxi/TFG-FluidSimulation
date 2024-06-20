@@ -1,7 +1,5 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using Unity.Mathematics;
 using UnityEngine;
 
 [System.Serializable]
@@ -95,7 +93,10 @@ public class FluidSimulation2 : MonoBehaviour
         SetBufferOnKernels(particlesBuffer,"Particles",updateNextPositionKernel,updateSpatialHashingInfoKernel,computeDensityKernel,computePressureKernel,computeViscosityKernel,externalForcesKernel);
         SetBufferOnKernels(spatialHashingInfo, "SpatialHashingInfo", updateSpatialHashingInfoKernel,sortSpatialHashingInfoKernel, updateSpatialHashingIndicesKernel, computeDensityKernel, computePressureKernel, computeViscosityKernel);
         SetBufferOnKernels(spatialHashingIndices, "SpatialHashingIndices", updateSpatialHashingInfoKernel,updateSpatialHashingIndicesKernel, computeDensityKernel, computePressureKernel, computeViscosityKernel);
-        SetBufferOnKernels(collidersBuffer, "Colliders", externalForcesKernel);
+        if(collidersBuffer != null)
+        {
+            SetBufferOnKernels(collidersBuffer, "Colliders", externalForcesKernel);
+        }
 
         particleRendering = gameObject.GetComponent<ParticleRendering>();
         particleRendering.SendDataToParticleInstancing(particlesBuffer);
@@ -126,10 +127,24 @@ public class FluidSimulation2 : MonoBehaviour
             colliders = new List<IFluidCollider>();
             colliders.AddRange(FindObjectsByType<FluidCircleCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None));
             colliders.AddRange(FindObjectsByType<FluidQuadCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None));
-            collidersBuffer = new ComputeBuffer(colliders.Count, 44);
             numOfColliders = colliders.Count;
-            _colliderDataArray = new FluidColliderData[colliders.Count];
-            SetCollidersData();
+            if (numOfColliders > 0)
+            {
+                collidersBuffer = new ComputeBuffer(numOfColliders, 44);
+                _colliderDataArray = new FluidColliderData[numOfColliders];
+                SetCollidersData();
+            }
+            else
+            {
+                // Create an empty buffer if no colliders are present
+                collidersBuffer = new ComputeBuffer(1, 44);
+                _colliderDataArray = new FluidColliderData[1];
+                _colliderDataArray[0] = new FluidColliderData(); // Initialize with default values
+                _colliderDataArray[0].type = 0;
+                _colliderDataArray[0].radius = 0.0f;
+                _colliderDataArray[0].center = new Vector2(0.0f, 0.0f);
+                collidersBuffer.SetData(_colliderDataArray);
+            }
         }
         else
         {
@@ -204,7 +219,11 @@ public class FluidSimulation2 : MonoBehaviour
         {
             _colliderDataArray[i] = colliders[i].GetColliderData();
         }
-        collidersBuffer.SetData(_colliderDataArray);
+
+        if(collidersBuffer!=null)
+        {
+            collidersBuffer.SetData(_colliderDataArray);
+        }
     }
 
     //BitonicSort from Sebastian Lague
