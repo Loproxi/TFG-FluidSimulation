@@ -5,6 +5,7 @@ public class ParticleRendering : MonoBehaviour
     [Header("Particles")]
     [SerializeField] Mesh mesh;
     [SerializeField] Shader particleInstancingShader;
+    [Range(0.1f, 30.0f)]
     [SerializeField] float scale;
     [SerializeField] Color color;
 

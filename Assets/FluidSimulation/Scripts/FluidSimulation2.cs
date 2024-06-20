@@ -52,14 +52,18 @@ public class FluidSimulation2 : MonoBehaviour
     int numOfColliders;
 
     [Header("SPH Simulation Related")]
-    [Range(0.0f, 5.0f)]
+    [Range(0.3f, 2.0f)]
     public float smoothingDensityRadius = 1.0f;
+    [Range(0.3f, 100.0f)]
     public float restDensity = 1.0f;
+    [Range(0.3f, 100.0f)]
     public float fluidConstant = 2.0f;
+    [Range(0.3f, 20.0f)]
     public float nearDensityConst = 5.0f;
     [Range(0.0f, 1.0f)]
     public float collisionDamping = 1.0f;
     public float gravity = -9.81f;
+    [Range(0.0f, 20.0f)]
     public float viscosity = 0.0f;
 
     private ParticleRendering particleRendering;

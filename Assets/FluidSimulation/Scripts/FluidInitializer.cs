@@ -4,7 +4,9 @@ public class FluidInitializer : MonoBehaviour
 {
     [Header("Particle Init Settings")]
     [HideInInspector] public Vector2[] positions;
+    [Range(500, 27500)]
     public int numParticles = 100;
+    [Range(0.1f, 30.0f)]
     public float particleScale = 0.25f;
 
     [Header("Domain Bounds")]
