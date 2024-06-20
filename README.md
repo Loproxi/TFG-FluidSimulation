@@ -63,18 +63,23 @@ In the package, you will find two fluid simulation scripts. One works with a com
 #### 3.2.3 Particle Rendering
 - This script component is responsible for setting the looks of the particles.
     - The variables in detail are
-        - `Mesh`: Specifies the total number of particles in the simulation.
-        - `Particle Instancing Shader`: Defines the scale of each particle
-        - `Particle Scale`: Defines the upper-left vertex of the domain quad.
-        - `Particle Color`: Defines the upper-left vertex of the domain quad.
+        - `Mesh`: Specifies the mesh used for the particles in the simulation.
+        - `Particle Instancing Shader`: The shader used for particle instancing.
+        - `Particle Scale`: Defines the scale of each particle.
+        - `Particle Color`: Defines the color of each particle.
 
 ## 4. Basic Usage
 ### 4.1 Creating a Fluid Source
 How to add fluid sources to the environment:
-Create a new empty GameObject or select an existing one.
-Add the FluidSource2D script to the GameObject (Add Component > FluidSource2D).
-Configure the properties of the FluidSource2D component (position, amount of fluid, etc.).
+- After setting the FluidSimulation prefab to the scene and setting the shaders.
+- Press Play in the Unity Editor to start seeing your fluid simulation.
+- Adjust the values from the bounds, as well as the ones that shape your fluid to look good. To increase the number of particles you will have to restart de simulation.
 ### 4.2 Interacting with the Fluid
 Explanation of how to interact with the fluid in real-time:
-Use the mouse to add forces to the fluid.
-Modify parameters in real-time from the Inspector to see immediate effects.
+If you happen to like interacting with the fluid you just have to set some of the colliders that are inside the package.
+You will find two scripts:
+
+- FluidCircleCollider: Circle collider that will collide with the fluid providing interactability
+- FluidQuadCollider: Quad collider that will collide with the fluid providing interactability
+  
+![ResultOfthePlayerWithColliders](https://github.com/Loproxi/TFG-FluidSimulation/assets/79161178/7331a9d5-2f4e-4ef5-89a0-fe09cbc1a32c)
