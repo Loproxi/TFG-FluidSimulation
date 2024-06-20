@@ -31,7 +31,7 @@
 -  How to add the main fluid simulation package/Tool to a Scene:
   1.  Add the `FluidSimulation` prefab from the Assets to the Scene.
 -  How to adjust the Prefab with the needed information:
-  2.  After clicking on it you will have to set some things in order for it to work.
+  2.(If those are not already set for you) After clicking on it you will have to set some things in order for it to work.
 - Required Shaders
     - The Compute shader `FluidSimulation2Compute` 
     - The Particle Instancing Shader `Custom/Particle`
@@ -44,16 +44,16 @@
 - This script component is responsible for setting the number of particles, the domain bounds of the simulation, the particle scale and generating the positions of each particle within the domain.
     - The variables in detail are
         - `Num Particles`: Specifies the total number of particles in the simulation.
-        - `Particle Collision Scale`: Defines the scale that each particle must have to collide properly with other items (Must be the same as the particle Scale in Particle Rendering).
+        - `Particle Collision Scale`: Defines the scale that each particle must have to collide properly with other items. This must be the same as the `Particle Scale` in `Particle Rendering`.
         - `Min Bounds`: Defines the upper-left vertex of the domain quad.
         - `Max Bounds`: Defines the bottom-right vertex of the domain quad.
 #### 3.2.2 Fluid Simulation 
 - This script component is responsible for adjusting variables to tailor the fluid behavior to your requirements.
     - The variables in detail are
-        - `Smoothing Radius`: The radius used for smoothing calculations in the simulation.
-        - `Rest Density`: The target density that particles are trying to achieve (higher values cause particles to be closer together).
-        - `Fluid Constant`: A multiplier for each density calculation (higher values cause particles to spread).
-        - `Near Density Const`: Increases density when particles are on top of each other.
+        - `Smoothing Radius`: This radius defines the "zone of influence" around each particles in the simulation. The larger the smoothing radius area, the more particles will be taken into account for the calculations. 
+        - `Rest Density`: The target density that particles are trying to achieve. Higher values cause particles to be closer together.
+        - `Fluid Constant`: A multiplier for each density calculation. Higher values cause particles to spread out more.
+        - `Near Density Const`: Avoid particles to be on top of each other.
         - `Collision Damping`: Reduces the velocity of particles after they collide with a wall.
         - `Gravity`: The gravitational force affecting the fluid.
         - `Viscosity`: Controls how viscous (slimy) the fluid is.
@@ -73,8 +73,8 @@ How to add fluid sources to the environment:
 - Press Play in the Unity Editor to start seeing your fluid simulation.
 - Adjust the values from the bounds, as well as the ones that shape your fluid to look good. To increase the number of particles you will have to restart de simulation.
 ### 4.2 Interacting with the Fluid
-Explanation of how to interact with the fluid in real-time:
-If you happen to like interacting with the fluid you just have to set some of the colliders that are inside the package.
+Explanation of how to make objects interact with the fluid in real-time:
+
 You will find two scripts:
 
 - FluidCircleCollider: Circle collider that will collide with the fluid providing interactability
