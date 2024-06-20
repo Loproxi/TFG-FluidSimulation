@@ -369,7 +369,7 @@ public class FluidSimulation : MonoBehaviour
         Vector2 particlePosition = _particles[particleIndex].position;
         Vector2 particleVelocity = _particles[particleIndex].velocity;
 
-        Vector2 particleSize = Vector2.one * _fluidInitializer.particleScale;
+        Vector2 particleSize = Vector2.one * _fluidInitializer.particleCollisionScale;
 
         _particles[particleIndex].UpdatePosition(new Vector2(
            Mathf.Clamp(particlePosition.x, _fluidInitializer.minBounds.x + particleSize.x, _fluidInitializer.maxBounds.x - particleSize.x),

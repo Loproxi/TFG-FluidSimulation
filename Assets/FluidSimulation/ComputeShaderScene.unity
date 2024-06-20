@@ -41015,6 +41015,10 @@ PrefabInstance:
       propertyPath: mesh
       value: 
       objectReference: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+    - target: {fileID: 5957997542931381931, guid: 2680f5745b1ebc4489e50d45cee3647b, type: 3}
+      propertyPath: particleCollisionScale
+      value: 0.35
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

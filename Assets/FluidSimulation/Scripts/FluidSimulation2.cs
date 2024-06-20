@@ -187,7 +187,7 @@ public class FluidSimulation2 : MonoBehaviour
 
     private void UpdateComputeVariables(float dt)
     {
-        particleRadius = _fluidInitializer.particleScale/2;
+        particleRadius = _fluidInitializer.particleCollisionScale/2;
         //Update the simulation Variables each frame
         compute.SetFloat("smoothingDensityRadius", smoothingDensityRadius);
         compute.SetFloat("collisionDamping", collisionDamping);

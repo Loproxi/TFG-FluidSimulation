@@ -7,7 +7,7 @@ public class FluidInitializer : MonoBehaviour
     [Range(500, 27500)]
     public int numParticles = 100;
     [Range(0.1f, 30.0f)]
-    public float particleScale = 0.25f;
+    public float particleCollisionScale = 0.25f;
 
     [Header("Domain Bounds")]
     public Vector2 minBounds = new Vector2(0,0);
@@ -47,7 +47,7 @@ public class FluidInitializer : MonoBehaviour
     }
     Vector2 GetRandomPosition()
     {
-        float particleRadius = particleScale/2;
+        float particleRadius = particleCollisionScale/2;
 
         float x = Random.Range(minBounds.x + particleRadius, maxBounds.x - particleRadius);
         float y = Random.Range(minBounds.y + particleRadius, maxBounds.y - particleRadius);
@@ -57,7 +57,7 @@ public class FluidInitializer : MonoBehaviour
 
     public bool IsParticleInsideBounds(Vector3 particlePos)
     {
-        float particleRadius = particleScale / 10;
+        float particleRadius = particleCollisionScale / 10;
         //Taking into account the particle radius in limits
         float minX = minBounds.x + particleRadius;
         float maxX = maxBounds.x - particleRadius;
