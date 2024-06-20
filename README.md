@@ -36,7 +36,7 @@
     - The Compute shader `FluidSimulation2Compute` 
     - The Particle Instancing Shader `Custom/Particle`
   
-![ComponentsInFluidSimulationPrefab](https://github.com/Loproxi/TFG-FluidSimulation/assets/79161178/0b44a65f-2ff4-4aae-b00d-beea4c4bb030)
+![ComponentsInFluidSimulationPrefab](https://github.com/Loproxi/TFG-FluidSimulation/assets/79161178/073a2026-04f0-43cf-87a3-fc47312d5174)
 
 ### 3.2 Tool Configuration
 - This section explains the purpose of each variable and component.
