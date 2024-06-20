@@ -38,15 +38,13 @@
   
 ![ComponentsInFluidSimulationPrefab](https://github.com/Loproxi/TFG-FluidSimulation/assets/79161178/0b44a65f-2ff4-4aae-b00d-beea4c4bb030)
 
-In the package, you will find two fluid simulation scripts. One works with a compute shader, and the other does not. I personally recommend using the one with the compute shader because it can handle more particles. However, it can only be used once per scene. I am not sure why; it might be related to synchronization problems due to multiple compute shaders working simultaneously. For this reason, I provide two options. The other script can be used multiple times within the same scene.
-
 ### 3.2 Tool Configuration
 - This section explains the purpose of each variable and component.
 #### 3.2.1 Fluid Initializer
 - This script component is responsible for setting the number of particles, the domain bounds of the simulation, the particle scale and generating the positions of each particle within the domain.
     - The variables in detail are
         - `Num Particles`: Specifies the total number of particles in the simulation.
-        - `Particle Scale`: Defines the scale of each particle
+        - `Particle Collision Scale`: Defines the scale that each particle must have to collide properly with other items (Must be the same as the particle Scale in Particle Rendering).
         - `Min Bounds`: Defines the upper-left vertex of the domain quad.
         - `Max Bounds`: Defines the bottom-right vertex of the domain quad.
 #### 3.2.2 Fluid Simulation 
