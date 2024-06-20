@@ -28,13 +28,13 @@
     3. Select the downloaded package and click Import.
 ## 3. Initial Setup
 ### 3.1 Adding the Fluid Simulation to the Scene
--  How to add the main fluid simulation package/Tool to a Scene:
-  1.  Add the `FluidSimulation` prefab from the Assets to the Scene.
--  How to adjust the Prefab with the needed information:
-  2.(If those are not already set for you) After clicking on it you will have to set some things in order for it to work.
-- Required Shaders
-    - The Compute shader `FluidSimulation2Compute` 
-    - The Particle Instancing Shader `Custom/Particle`
+1.  How to add the main fluid simulation package/Tool to a Scene:
+    -  Add the `FluidSimulation` prefab from the Assets to the Scene.
+2.  How to adjust the Prefab with the needed information, In case it was not already set:
+    - After clicking on it you will have to set some things in order for it to work.
+    - Required Shaders
+        - The Compute shader `FluidSimulation2Compute` 
+        - The Particle Instancing Shader `Custom/Particle`
   
 ![ComponentsInFluidSimulationPrefab](https://github.com/Loproxi/TFG-FluidSimulation/assets/79161178/073a2026-04f0-43cf-87a3-fc47312d5174)
 
@@ -75,9 +75,16 @@ How to add fluid sources to the environment:
 ### 4.2 Interacting with the Fluid
 Explanation of how to make objects interact with the fluid in real-time:
 
-You will find two scripts:
+1. **Create the GameObject:** Start by creating the GameObject that you want the fluid to interact with.
+2. **Add the Fluid Collider Scripts:** Add the fluid collider scripts provided in the package:
+    - You will find two scripts:
+        - FluidCircleCollider: A circular collider that will interact with the fluid.
+        - FluidQuadCollider: A rectangular collider that will interact with the fluid.
+    - For more complex shapes, you can add multiple colliders to different GameObjects. Check the example below:
+      
+![PlayerInExample](https://github.com/Loproxi/TFG-FluidSimulation/assets/79161178/b122a8c8-c3eb-4258-9e0d-6ab8ab6f824f)
 
-- FluidCircleCollider: Circle collider that will collide with the fluid providing interactability
-- FluidQuadCollider: Quad collider that will collide with the fluid providing interactability
-  
+**Each square on the photo is a different `FluidQuadCollider` on the same gameobject**
+
+3. Result
 ![ResultOfthePlayerWithColliders](https://github.com/Loproxi/TFG-FluidSimulation/assets/79161178/7331a9d5-2f4e-4ef5-89a0-fe09cbc1a32c)
