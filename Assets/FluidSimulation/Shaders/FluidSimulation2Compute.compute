@@ -441,14 +441,19 @@ void ApplyForcesAndCollisions(uint3 groupID : SV_GroupID, uint groupIndex : SV_G
     if (particlePosition.x < (bounds.x + particleSize.x) || particlePosition.x > (bounds.z - particleSize.x))
     {
         // Invert X velocity
-        Particles[particleId].velocity = float2(particleVelocity.x * -1 * collisionDamping, particleVelocity.y);
+        Particles[particleId].velocity.x *= -collisionDamping; // Adjust damping factor as needed
 
+        // Update particle position immediately
+        Particles[particleId].position.x += Particles[particleId].velocity.x * deltaTime;
     }
 
     if (particlePosition.y < (bounds.y + particleSize.y) || particlePosition.y > (bounds.w - particleSize.y))
     {
         // Invert Y velocity
-        Particles[particleId].velocity = float2(particleVelocity.x, particleVelocity.y * -1 * collisionDamping);
+        Particles[particleId].velocity.y *= -collisionDamping; // Adjust damping factor as needed
+
+        // Update particle position immediately
+        Particles[particleId].position.y += Particles[particleId].velocity.y * deltaTime;
     }
     
 }

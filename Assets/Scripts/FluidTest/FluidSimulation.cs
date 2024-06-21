@@ -310,12 +310,14 @@ public class FluidSimulation : MonoBehaviour
         velocities[particleIndex] = pressureAcceleration * deltaTime;
 
     }
+
     private float ConvertDensityIntoPressure(float density)
     {
         //If the rest density is achieved particle won't generate pressure
         float pressure = (density - restDensity) * gasConstant;
         return pressure;
     }
+
     private float ConvertNearDensityIntoPressure(float density)
     {
         //If the rest density is achieved particle won't generate pressure
