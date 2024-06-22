@@ -8,6 +8,8 @@
 ![ExampleScene](https://github.com/Loproxi/TFG-FluidSimulation/assets/79161178/3f5876be-18f1-42f8-88e9-d6997ce4b115)
 ![ExampleScene2](https://github.com/Loproxi/TFG-FluidSimulation/assets/79161178/ffaa8645-a2c3-4c80-98f9-a6cb7866dcc7)
 
+*The assets used in the example scene and the gif above are from [brullov](https://brullov.itch.io/oak-woods)*
+
 ### 1.2 Requirements
 -  The tool has been tested on Unity 2022.3.3 but it should work on Unity Versions 2020-2021
 -  Since this tool uses compute shaders, it is important to check that your platform support compute shaders in order to this tool to work. Here you have a list of platform that support them (List extracted from Unity Documentation).
