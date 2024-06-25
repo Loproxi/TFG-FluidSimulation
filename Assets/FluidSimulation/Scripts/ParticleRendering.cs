@@ -27,7 +27,7 @@ public class ParticleRendering : MonoBehaviour
         commandData = new GraphicsBuffer.IndirectDrawIndexedArgs[commandCount];
 
         // Initialize the indirect command data
-        commandData[0].indexCountPerInstance = (uint)mesh.GetIndexCount(0);
+        commandData[0].indexCountPerInstance = mesh.GetIndexCount(0);
         commandData[0].instanceCount = (uint)particles.count;
         commandData[0].startIndex = 0;
         commandData[0].baseVertexIndex = 0;
@@ -45,7 +45,7 @@ public class ParticleRendering : MonoBehaviour
         RenderParams rp = new RenderParams(material);
         rp.worldBounds = bounds; // use tighter bounds for better FOV culling
 
-        Graphics.RenderMeshIndirect(rp, mesh, commandBuffer, commandCount);
+        Graphics.DrawMeshInstancedIndirect(mesh, 0, material, bounds, commandBuffer);
     }
 
     void OnDestroy()

@@ -64,7 +64,7 @@ Shader "Custom/Particle"
                 // Escalar la partícula
                 float3 scaledVertex = v.vertex.xyz * _Scale;
 
-                // Transformar la posición del vértice de objeto a clip space
+                // World To clip space
                 o.vertex = UnityObjectToClipPos(float4(worldPosition + scaledVertex, 1.0));
 
                 // Pasar los datos al fragment shader

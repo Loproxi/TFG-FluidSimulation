@@ -175,7 +175,7 @@ public class FluidSimulation2 : MonoBehaviour
 
         OnDispatchComputeShader(_fluidInitializer.numParticles, updateNextPositionKernel);
         OnDispatchComputeShader(_fluidInitializer.numParticles, updateSpatialHashingInfoKernel);
-        OnDispatchComputeShader(spatialHashingInfo.count/2, sortSpatialHashingInfoKernel);
+        //OnDispatchComputeShader(spatialHashingInfo.count/2, sortSpatialHashingInfoKernel);
         SortSpatialHashing(); 
         OnDispatchComputeShader(_fluidInitializer.numParticles, updateSpatialHashingIndicesKernel);
         OnDispatchComputeShader(_fluidInitializer.numParticles, computeDensityKernel);

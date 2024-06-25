@@ -9,7 +9,7 @@
 #pragma kernel ApplyForcesAndCollisions
 
 //Include Functions From another hlsl
-#include "FluidComputeTools.hlsl" // WHY THS BREAKS
+#include "FluidComputeTools.hlsl" 
 
 struct FluidParticleData
 {
@@ -149,7 +149,6 @@ void UpdateSpatialHashingIndices(uint3 groupID : SV_GroupID, uint groupIndex : S
 void ComputeDensity(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
 {
     uint particleId = groupID.x * numOfThreads + groupIndex;
-    
     if (particleId >= (uint) numOfParticles) return;
     
     FluidParticleData particle = Particles[particleId];
