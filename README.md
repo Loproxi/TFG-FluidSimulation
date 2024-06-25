@@ -11,7 +11,7 @@
 *The assets used in the example scene and the gif above are from [brullov](https://brullov.itch.io/oak-woods)*
 
 ### 1.2 Requirements
--  The tool has been tested on Unity 2022.3.3 but it should work on Unity Versions 2020-2021
+-  The tool has been tested on Unity 2022.3.3 and 2021.3.3 but it should work on Unity Versions 2020 as well.
 -  Since this tool uses compute shaders, it is important to check that your platform support compute shaders in order to this tool to work. Here you have a list of platform that support them (List extracted from Unity Documentation).
     - Windows and Windows Store, with a DirectX 11 or DirectX 12 graphics API and Shader Model 5.0 GPU
     - macOS and iOS using Metal graphics API
