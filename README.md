@@ -22,7 +22,7 @@
 
 ## 2. Installation
 ### 2.1 Download
--  Link to download the tool package.
+-  [Link to download the tool package.](https://github.com/Loproxi/TFG-FluidSimulation/releases/tag/v1.0)
 ### 2.2 Import
 -  Step-by-step instructions for importing the package into Unity:
     1. Open Unity and create a new project or open an existing project.
