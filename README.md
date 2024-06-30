@@ -31,6 +31,7 @@
     1. Open Unity and create a new project or open an existing project.
     2. Go to Assets > Import Package > Custom Package.
     3. Select the downloaded package and click Import.
+       
 ## 3. Initial Setup
 ### 3.1 Adding the Fluid Simulation to the Scene
 1.  How to add the main fluid simulation package/Tool to a Scene:
