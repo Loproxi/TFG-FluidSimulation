@@ -1,5 +1,9 @@
 # Documentation for the 2D Fluid Simulation Tool in Unity
 
+
+## VideoTeaser:
+![VideoTeaser](https://youtu.be/LHYGvYJ7tsg)
+
 ## 1. Introduction
 
 ### 1.1 Description
@@ -8,9 +12,6 @@
 ![ExampleScene2](https://github.com/Loproxi/TFG-FluidSimulation/assets/79161178/ffaa8645-a2c3-4c80-98f9-a6cb7866dcc7)
 
 *The assets used in the example scene and the gif above are from [brullov](https://brullov.itch.io/oak-woods)*
-
-### 1.1.1 VideoTeaser:
-![VideoTeaser](https://youtu.be/LHYGvYJ7tsg)
 
 ### 1.2 Requirements
 -  The tool has been tested on Unity 2022.3.3 and 2021.3.3 but it should work on Unity Versions 2020 as well.
