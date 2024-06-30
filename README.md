@@ -70,6 +70,9 @@
         - `Particle Scale`: Defines the scale of each particle.
         - `Particle Color`: Defines the color of each particle.
 
+#### Customizable Fluid
+![FullyCustomizableFluid5](https://github.com/Loproxi/TFG-FluidSimulation/assets/79161178/fe6b6a42-897f-40b6-b9e7-cffa06c50f19)
+
 ## 4. Basic Usage
 ### 4.1 Creating a Fluid Source
 How to add fluid sources to the environment:
