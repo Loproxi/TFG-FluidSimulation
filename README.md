@@ -2,7 +2,7 @@
 
 
 ## VideoTeaser:
-![VideoTeaser](https://youtu.be/LHYGvYJ7tsg)
+[![PortadaTrailer](https://github.com/Loproxi/TFG-FluidSimulation/assets/79161178/f53426b5-6571-466c-a1f7-1feccc09bbfe)](https://youtu.be/LHYGvYJ7tsg)
 
 ## 1. Introduction
 
